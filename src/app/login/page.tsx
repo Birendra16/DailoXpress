@@ -3,9 +3,8 @@
 import { EyeIcon, EyeOff, Leaf, Loader2, Lock, LogIn, Mail} from 'lucide-react'
 import { motion } from "motion/react"
 import Image from 'next/image'
-import { FormEvent, useState } from 'react'
+import { SubmitEvent, useState } from 'react'
 import googleImage from "@/assets/google.png"
-import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 
@@ -18,7 +17,7 @@ function Login() {
 
     const router = useRouter()
 
-    const handleLogin =async (e:FormEvent)=>{
+    const handleLogin =async (e:SubmitEvent<HTMLFormElement>)=>{
         e.preventDefault()
         setLoading(true)
         try{
@@ -75,7 +74,7 @@ function Login() {
 
             <div className='relative'>
             <Mail className='absolute left-3 top-3.5 w-5 h-5 text-gray-400'/>
-            <input type="text" placeholder="Your Email" className='w-full border border-gray-300
+            <input type="email" placeholder="Your Email" className='w-full border border-gray-300
             rounded-xl py-3 pl-10 pr-4 text-gray-800 focus:ring-2 focus:ring-green-500 
             focus:outline-none'
             onChange={(e)=>setEmail(e.target.value)}
@@ -122,7 +121,9 @@ function Login() {
             </div>
 
             <button className='w-full flex items-center justify-center gap-3 border border-gray-300
-            hover:bg-gray-50 py-3 rounded-xl text-gray-700 font-medium transition-all duration-200'>
+            hover:bg-gray-50 py-3 rounded-xl text-gray-700 font-medium transition-all duration-200'
+            type="button" onClick={()=>signIn("google")}
+            >
                 <Image
                 src={googleImage}
                 width={20}
