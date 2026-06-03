@@ -24,6 +24,7 @@ function Login() {
             await signIn("credentials",{
                 email,password
             })
+            router.push("/")
             setLoading(false)
         }catch(error){
             console.log(error)
@@ -122,7 +123,7 @@ function Login() {
 
             <button className='w-full flex items-center justify-center gap-3 border border-gray-300
             hover:bg-gray-50 py-3 rounded-xl text-gray-700 font-medium transition-all duration-200'
-            type="button" onClick={()=>signIn("google")}
+            type="button" onClick={()=>signIn("google",{callbackUrl:"/"})}
             >
                 <Image
                 src={googleImage}
