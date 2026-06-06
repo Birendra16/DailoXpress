@@ -66,10 +66,10 @@ function AddGrocery() {
 
     return (
         <div className='min-h-screen flex items-center justify-center bg-linear-to-br from-green-50
-        to-white py-16 px-4 relative'>
+        to-white py-12 px-4 relative'>
 
             <Link href={"/"}
-                className='absolute top-6 left-6 flex items-center gap-2 text-green-700 font-semibold bg-white 
+                className='absolute top-4 left-4 flex items-center gap-2 text-green-700 font-semibold bg-white 
             px-4 py-2 rounded-full shadow-md hover:bg-green-100 hover:shadow-lg transition-all'
             >
                 <ArrowLeft className='w-5 h-5' />
@@ -80,12 +80,12 @@ function AddGrocery() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.4 }}
-                className='bg-white w-full max-w-2xl shadow-2xl rounded-3xl border border-green-100 p-8'
+                className='bg-white w-full max-w-2xl shadow-2xl rounded-3xl border border-green-100 p-6'
             >
-                <div className='flex flex-col items-center mb-8'>
+                <div className='flex flex-col items-center mb-6'>
 
                     <div className='flex items-center gap-3'>
-                        <PlusCircle className='text-green-600 w-8 h-8' />
+                        <PlusCircle className='text-green-600 w-6 h-6' />
                         <h1>Add Your Grocery</h1>
                     </div>
 
@@ -95,7 +95,7 @@ function AddGrocery() {
 
                 </div>
 
-                <form className='flex flex-col gap-6 w-full'
+                <form className='flex flex-col gap-4 w-full'
                     onSubmit={handleSubmit}
                 >
 
@@ -108,7 +108,7 @@ function AddGrocery() {
                             onChange={(e) => setName(e.target.value)}
                             value={name}
                             className='w-full border
-                        border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-400
+                        border-gray-300 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-green-400
                         transition-all'/>
 
                     </div>
@@ -121,7 +121,7 @@ function AddGrocery() {
                                 onChange={(e) => setCategory(e.target.value)}
                                 value={category}
                                 className='w-full border border-gray-300 rounded-xl px-4
-                            py-3 outline-none focus:ring-2 focus:ring-green-400 transition-all bg-white'>
+                            py-2 outline-none focus:ring-2 focus:ring-green-400 transition-all bg-white'>
                                 <option value="">Select Category</option>
                                 {categories.map(cat => (
                                     <option key={cat} value={cat}>{cat}</option>
@@ -136,7 +136,7 @@ function AddGrocery() {
                                 onChange={(e) => setUnit(e.target.value)}
                                 value={unit}
                                 className='w-full border border-gray-300 rounded-xl px-4
-                            py-3 outline-none focus:ring-2 focus:ring-green-400 transition-all bg-white'>
+                            py-2 outline-none focus:ring-2 focus:ring-green-400 transition-all bg-white'>
                                 <option value="">Select Unit</option>
                                 {units.map(cat => (
                                     <option key={cat} value={cat}>{cat}</option>
@@ -155,7 +155,7 @@ function AddGrocery() {
                             onChange={(e) => setPrice(e.target.value)}
                             value={price}
                             className='w-full border
-                        border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-400
+                        border-gray-300 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-green-400
                         transition-all'/>
 
                     </div>
@@ -163,7 +163,7 @@ function AddGrocery() {
                     <div className='flex flex-col sm:flex-row items-center gap-5'>
                         <label htmlFor='image' className='cursor-pointer flex items-center justify-center
                         gap-2 bg-green-50 text-green-700 font-semibold border border-green-200 rounded-xl
-                        px-6 py-3 hover:bg-green-100 transition-all w-full sm:w-auto'>
+                        px-6 py-2 hover:bg-green-100 transition-all w-full sm:w-auto'>
                             <Upload className='w-5 h-5' /> Upload image
 
                         </label>
@@ -188,8 +188,8 @@ function AddGrocery() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.9 }}
                         disabled={loading}
-                        className='mt-4 w-full bg-linear-to-r from-green-500 to-green-700 text-white font-semibold
-                    py-3 rounded-xl shadow-lg hover:shadow-xl disabled:opacity-60 transition-all flex items-center
+                        className='mt-2 w-full bg-linear-to-r from-green-500 to-green-700 text-white font-semibold
+                    py-2 rounded-xl shadow-lg hover:shadow-xl disabled:opacity-60 transition-all flex items-center
                     justify-center gap-2'
                     >
                         {loading ? <Loader className='w-5 h-5 animate-spin' /> : "Add Grocery"}
