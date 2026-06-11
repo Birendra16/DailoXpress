@@ -36,6 +36,7 @@ function Checkout() {
     const [searchQuery, setSearchQuery] = useState("")
     const [searchLoading,setSearchLoading] = useState(false)
     const[paymentMethod, setPaymentMethod]=useState<"cod" | "online">("cod")
+    const [esewaLoading, setEsewaLoading] = useState(false)
 
 
     useEffect(() => {
@@ -146,6 +147,72 @@ function Checkout() {
             }
         }
 
+
+    const handleEsewa = async () => {
+        if (!position) {
+            alert("Please select your delivery location on the map.")
+            return
+        }
+
+        setEsewaLoading(true)
+        try {
+            const esewaTotal = Number(subTotal) + Number(deliveryFee ?? 0)
+
+            const res = await axios.post("/api/user/esewa/initiate", {
+                userId: userData?._id,
+                items: cartData.map(item => ({
+                    grocery: item._id,
+                    name: item.name,
+                    price: item.price,
+                    unit: item.unit,
+                    quantity: item.quantity,
+                    image: item.image
+                })),
+                totalAmount: esewaTotal,
+                subTotal: subTotal,
+                deliveryFee: deliveryFee,
+                address: {
+                    fullName: address.fullName,
+                    mobile: address.mobile,
+                    city: address.city,
+                    state: address.state,
+                    fullAddress: address.fullAddress,
+                    pinCode: address.pinCode,
+                    latitude: position[0],
+                    longitude: position[1]
+                }
+            })
+
+            const { esewaParams, paymentUrl } = res.data
+
+            console.log("ESEWA DEBUG", {
+                amount: esewaParams.amount,
+                total_amount: esewaParams.total_amount,
+                delivery: esewaParams.product_delivery_charge,
+                uuid: esewaParams.transaction_uuid,
+                signature: esewaParams.signature
+            });
+
+            // eSewa requires a browser form POST — we create and submit one dynamically
+            const form = document.createElement("form")
+            form.method = "POST"
+            form.action = paymentUrl
+
+            Object.entries(esewaParams).forEach(([key, value]) => {
+                const input = document.createElement("input")
+                input.type = "hidden"
+                input.name = key
+                input.value = String(value)
+                form.appendChild(input)
+            })
+
+            document.body.appendChild(form)
+            form.submit()
+        } catch (error) {
+            console.error("eSewa initiation failed:", error)
+            setEsewaLoading(false)
+        }
+    }
 
     useEffect(()=>{
         const fetchAddress = async () =>{
@@ -321,7 +388,7 @@ function Checkout() {
                         : "hover:bg-gray-50"
                     }`}>
                         <CreditCardIcon className="text-green-600"/>
-                        <span className="font-medium text-gray-700">Pay Online (stripe)</span>
+                        <span className="font-medium text-gray-700">Pay Online (eSewa)</span>
                     </button>
 
                     <button 
@@ -360,11 +427,13 @@ function Checkout() {
                     if(paymentMethod=="cod"){
                         handleCod()
                     }else{
-                        null
+                        handleEsewa()
                     }
                 }}
                 >
-                    {paymentMethod == "cod"?"Place Order":"Pay & Place Order"}
+                    {esewaLoading
+                        ? <Loader size={18} className="animate-spin mx-auto"/>
+                        : paymentMethod == "cod" ? "Place Order" : "Pay via eSewa"}
                 </motion.button>
 
                 </motion.div>

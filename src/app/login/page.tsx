@@ -14,20 +14,32 @@ function Login() {
     const [password, setPassword]= useState("")
     const [showPassword, setShowPassword]= useState(false)
     const [loading, setLoading] = useState(false)
+    const [error, setError] = useState("")
 
     const router = useRouter()
 
-    const handleLogin =async (e:SubmitEvent<HTMLFormElement>)=>{
+    const handleLogin = async (e: SubmitEvent<HTMLFormElement>) => {
         e.preventDefault()
         setLoading(true)
-        try{
-            await signIn("credentials",{
-                email,password
+        setError("")
+        try {
+            const result = await signIn("credentials", {
+                email,
+                password,
+                redirect: false,   // we handle redirect manually
             })
-            router.push("/")
-            setLoading(false)
-        }catch(error){
+
+            if (result?.error) {
+                // NextAuth returns error code — map to user-friendly message
+                setError("Invalid email or password. Please try again.")
+                setLoading(false)
+            } else {
+                router.push("/")
+                router.refresh()
+            }
+        } catch (error) {
             console.log(error)
+            setError("Something went wrong. Please try again.")
             setLoading(false)
         }
     }
@@ -114,6 +126,13 @@ function Login() {
                         </button>
                 }) ()
             }
+
+            {/* Error message */}
+            {error && (
+                <div className='w-full bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 text-center'>
+                    {error}
+                </div>
+            )}
 
             <div className='flex items-center gap-2 text-gray-400 text-sm mt-2'>
                 <span className='flex-1 h-px bg-gray-300'></span>
