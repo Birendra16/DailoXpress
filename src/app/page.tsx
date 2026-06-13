@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import AdminDashboard from "@/components/AdminDashboard";
-import DeliveryBoyDashboard from "@/components/DeliveryBoyDashboard";
+import DeliveryBoy from "@/components/DeliveryBoy";
 import EditRoleMobile from "@/components/EditRoleMobile";
 import GeoUpdater from "@/components/GeoUpdater";
 import Nav from "@/components/Nav";
@@ -35,7 +35,7 @@ export default async function Home() {
           <UserDashboard/>
         ): user.role=="admin"?(
           <AdminDashboard/>
-        ):<DeliveryBoyDashboard/>
+        ):<DeliveryBoy/>
       }
     </>
   );

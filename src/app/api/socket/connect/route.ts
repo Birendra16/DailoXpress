@@ -10,7 +10,7 @@ export async function POST(req:NextRequest){
         const user = await User.findByIdAndUpdate(userId,{
             socketId,
             isOnline:true
-        },{new:true})
+        },{returnDocument:"after"})
 
         if(!user){
              return NextResponse.json(
@@ -23,7 +23,7 @@ export async function POST(req:NextRequest){
             {success:true},
             {status:200}
         )
-    }catch(error){
+    }catch{
          return NextResponse.json(
             {success:false},
             {status:500}

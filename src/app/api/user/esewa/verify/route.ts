@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
         const order = await Order.findOneAndUpdate(
             { transactionUuid: transaction_uuid, isPaid: false },
             { isPaid: true },
-            { new: true }
+            { returnDocument: "after" }
         );
 
         if (!order) {

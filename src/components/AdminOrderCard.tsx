@@ -1,18 +1,54 @@
 "use client"
 
-import { IOrder } from "@/models/order.model"
+import { IUser } from "@/models/user.model"
 import axios from "axios"
-import { ChevronDown, ChevronUp, CreditCard, MapPin, Package, Phone, Truck, User } from "lucide-react"
+import { ChevronDown, ChevronUp, CreditCard, MapPin, Package, Phone, Truck, User, UserCheck } from "lucide-react"
+import mongoose from "mongoose"
 
 import {motion} from "motion/react"
 import Image from "next/image"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+
+ interface IOrder {
+    _id?: mongoose.Types.ObjectId
+    user: mongoose.Types.ObjectId
+    items: [
+        {
+            grocery: mongoose.Types.ObjectId,
+            name: string,
+            price: string,
+            unit: string,
+            image: string,
+            quantity: number
+        }
+    ]
+    isPaid: boolean,
+    totalAmount: number,
+    paymentMethod: "cod" | "online",
+    transactionUuid?: string
+    address: {
+        fullName: string,
+        mobile: string,
+        city: string,
+        state: string,
+        pinCode: string,
+        fullAddress: string,
+        latitude: number,
+        longitude: number
+
+    }
+    assignment?: mongoose.Types.ObjectId
+    assignedDeliveryBoy?: IUser
+    status: "pending" | "out of delivery" | "delivered",
+    createdAt?: Date
+    updatedAt?: Date
+}
 
 function AdminOrderCard({order}:{order:IOrder}) {
 
     const statusOptions = ["pending","out of delivery"]
     const [expanded, setExpanded] = useState(false)
-    const [status,setStatus] = useState<string>(order.status)
+    const [status,setStatus] = useState<string>("pending")
 
     const updateStatus = async (orderId:string,status:string)=>{
             try{
@@ -25,6 +61,10 @@ function AdminOrderCard({order}:{order:IOrder}) {
                 console.log(error)
             }
     }
+
+    useEffect(()=>{
+        setStatus(order.status)
+    },[order])
 
   return (
     <motion.div
@@ -69,6 +109,26 @@ function AdminOrderCard({order}:{order:IOrder}) {
                         <CreditCard size={14} className="text-green-600"/>
                         <span>{order.paymentMethod==="cod"?"Cash On Delivery":"Online Payment"}</span>
                 </p>
+
+                {order.assignedDeliveryBoy && <div className="mt-3 bg-blue-50 border
+                border-blue-200 rounded-xl p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-gray-700">
+                        <UserCheck size={14} className="text-blue-600"/>
+                        <div className="font-semibold text-gray-800">
+                        <p>Assigned to: <span>{order.assignedDeliveryBoy.name}</span></p>
+                        <p className="text-xs text-gray-600">📞 +977 {order.assignedDeliveryBoy.mobile}</p>
+                        </div>
+                    </div>
+
+                    <a href={`tel:${order.assignedDeliveryBoy.mobile}`}
+                    className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700
+                    transition-all"
+                    >
+                        Call
+                    </a>
+
+                    </div>
+                }
             </div>
 
             <div className="flex flex-col items-start md:items-end gap-2">

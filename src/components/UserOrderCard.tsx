@@ -1,14 +1,54 @@
 "use client"
 
-import { IOrder } from "@/models/order.model"
-import { ChevronDown, ChevronUp, CreditCard, MapPin, Package, Truck } from "lucide-react"
+import { getSocket } from "@/lib/socket"
+import { IUser } from "@/models/user.model"
+import { ChevronDown, ChevronUp, CreditCard, MapPin, Package, Truck, UserCheck } from "lucide-react"
+import mongoose from "mongoose"
 import {motion} from "motion/react"
 import Image from "next/image"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+
+
+interface IOrder {
+    _id?: mongoose.Types.ObjectId
+    user: mongoose.Types.ObjectId
+    items: [
+        {
+            grocery: mongoose.Types.ObjectId,
+            name: string,
+            price: string,
+            unit: string,
+            image: string,
+            quantity: number
+        }
+    ]
+    isPaid: boolean,
+    totalAmount: number,
+    paymentMethod: "cod" | "online",
+    transactionUuid?: string
+    address: {
+        fullName: string,
+        mobile: string,
+        city: string,
+        state: string,
+        pinCode: string,
+        fullAddress: string,
+        latitude: number,
+        longitude: number
+
+    }
+    assignment?: mongoose.Types.ObjectId
+    assignedDeliveryBoy?: IUser
+    status: "pending" | "out of delivery" | "delivered",
+    createdAt?: Date
+    updatedAt?: Date
+}
+
 
 function UserOrderCard({order}:{order:IOrder}) {
 
     const [expanded, setExpanded] =useState(false)
+    const [status,setStatus]= useState(order.status)
 
     const getStatusColor = (status:string)=>{
         switch (status) {
@@ -24,6 +64,17 @@ function UserOrderCard({order}:{order:IOrder}) {
                     
         }
     }
+
+    useEffect(():any=>{
+        const socket = getSocket()
+        socket.on("order-status-update",(data)=>{
+            if(data.orderId.toString()==order?._id!.toString()){
+                setStatus(data.status)
+            }
+        })
+
+        return()=>socket.off("order-status-update")
+    },[])
 
   return (
     <motion.div 
@@ -52,9 +103,9 @@ function UserOrderCard({order}:{order:IOrder}) {
                     {order.isPaid?"Paid":"Unpaid"}
                 </span>
                 <span className={`px-3 py-1 text-xs font-semibold border rounded-full ${getStatusColor(
-                    order.status
+                    status
                 )}`}>
-                    {order.status}
+                    {status}
                 </span>
             </div>
 
@@ -68,6 +119,27 @@ function UserOrderCard({order}:{order:IOrder}) {
             <CreditCard size={14} className="text-green-600"/>
             Online Payment
         </div>}
+
+             {order.assignedDeliveryBoy && <div className="mt-3 bg-blue-50 border
+                        border-blue-200 rounded-xl p-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-xs text-gray-700">
+                                <UserCheck size={14} className="text-blue-600"/>
+                                <div className="font-semibold text-gray-800">
+                                <p>Assigned to: <span>{order.assignedDeliveryBoy.name}</span></p>
+                                <p className="text-xs text-gray-600">📞 +977 {order.assignedDeliveryBoy.mobile}</p>
+                                </div>
+                            </div>
+        
+                            <a href={`tel:${order.assignedDeliveryBoy.mobile}`}
+                            className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700
+                            transition-all"
+                            >
+                                Call
+                            </a>
+        
+                            </div>
+                        }
+
         <div className="flex items-center gap-2 text-gray-700 text-sm">
             <MapPin size={14} className="text-green-600"/>
             <span className="truncate"> {order.address.fullAddress} </span>
@@ -136,7 +208,7 @@ function UserOrderCard({order}:{order:IOrder}) {
         text-gray-800">
             <div className="flex items-center gap-2 text-gray-700 text-sm">
                 <Truck size={14} className="text-green-600"/>
-                <span>Delivery: <span className="text-green-700 font-semibold">{order.status}</span></span>
+                <span>Delivery: <span className="text-green-700 font-semibold">{status}</span></span>
             </div>
             <div>
                 Total: <span className="text-green-700 font-bold">रु{order.totalAmount}</span>
