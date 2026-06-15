@@ -117,6 +117,18 @@ function DeliveryBoyDashboard() {
     }, [userData])
 
 
+    useEffect((): any => {
+        const socket = getSocket()
+        socket.on("update-deliveryBoy-location", ({ userId, location }) => {
+            setDeliveryBoyLocation({
+                latitude: location.coordinates[1],
+                longitude: location.coordinates[0]
+            })
+        })
+
+        return () => socket.off("update-deliveryBoy-location")
+    }, [])
+
     if (activeOrder && userLocation) {
         return (
             <div className="p-4 mt-20 min-h-screen-bg-gray-50">
