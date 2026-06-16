@@ -1,5 +1,6 @@
 "use client"
 
+import { getSocket } from "@/lib/socket"
 import { IUser } from "@/models/user.model"
 import axios from "axios"
 import { ChevronDown, ChevronUp, CreditCard, MapPin, Package, Phone, Truck, User, UserCheck } from "lucide-react"
@@ -66,6 +67,19 @@ function AdminOrderCard({order}:{order:IOrder}) {
         setStatus(order.status)
     },[order])
 
+
+     useEffect((): any => {
+            const socket = getSocket()
+            socket.on("order-status-update", (data) => {
+                if (data.orderId.toString() == order?._id!.toString()) {
+                    setStatus(data.status)
+                }
+            })
+    
+            return () => socket.off("order-status-update")
+        }, [])
+    
+
   return (
     <motion.div
     key={order._id?.toString()}
@@ -81,13 +95,17 @@ function AdminOrderCard({order}:{order:IOrder}) {
                 <Package size={18}/>
                 Order #{order._id?.toString().slice(-6)}
                 </p>
-                <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full border ${
+
+                {status!="delivered" && 
+                 <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full border ${
                     order.isPaid
                     ? "bg-green-100 text-green-700 border-green-300"
                     : "bg-red-100 text-red-700 border-red-300"
                 }`}>
                     {order.isPaid?"Paid":"Unpaid"}
                 </span>
+                }
+               
                 <p className="text-gray-500 text-xs">
                 {new Date(order.createdAt!).toLocaleString()}
                 </p>
@@ -142,7 +160,9 @@ function AdminOrderCard({order}:{order:IOrder}) {
                 }`}>
                     {status}
                 </span>
-                <select className="border border-gray-300 rounded-lg px-3 py-1 text-xs shadow-sm
+
+                {status!="delivered" && 
+                     <select className="border border-gray-300 rounded-lg px-3 py-1 text-xs shadow-sm
                 hover:border-green-400 transition focus:ring-2 focus:ring-green-500 outline-none"
                 value={status}
                 onChange={(e)=>updateStatus(order._id?.toString()!,e.target.value)}
@@ -153,6 +173,9 @@ function AdminOrderCard({order}:{order:IOrder}) {
                         </option>
                     ))}
                 </select>
+                }
+
+               
             </div>
 
         </div>

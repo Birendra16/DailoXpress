@@ -98,12 +98,15 @@ function UserOrderCard({ order }: { order: IOrder }) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                    {status!=="delivered" &&
                     <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${order.isPaid
                             ? "bg-green-100 text-green-700 border-green-300"
                             : "bg-red-100 text-red-700 border-red-300"
                         }`}>
                         {order.isPaid ? "Paid" : "Unpaid"}
                     </span>
+                    }
+                    
                     <span className={`px-3 py-1 text-xs font-semibold border rounded-full ${getStatusColor(
                         status
                     )}`}>
@@ -112,8 +115,9 @@ function UserOrderCard({ order }: { order: IOrder }) {
                 </div>
 
             </div>
-
-            <div className="p-4 space-y-2">
+            
+            {status!=="delivered" && 
+                <div className="p-4 space-y-2">
                 {order.paymentMethod == "cod" ? <div className="flex items-center gap-2 text-gray-700 text-sm">
                     <Truck size={14} className="text-green-600" />
                     Cash On Delivery
@@ -224,6 +228,8 @@ function UserOrderCard({ order }: { order: IOrder }) {
                 </div>
 
             </div>
+            }
+            
 
         </motion.div>
     )
