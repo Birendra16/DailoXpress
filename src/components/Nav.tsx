@@ -85,7 +85,7 @@ function Nav({ user }: { user: IUser }) {
                         <PlusCircle className='w-5 h-5' />
                         Add Grocery
                     </Link>
-                    <Link href={""}
+                    <Link href={"/admin/view-grocery"}
                         className='flex items-center gap-3 p-3 rounded-lg bg-white/10 hover:bg-white/20
                         hover:pl-4 transition-all'
                     >
@@ -166,7 +166,7 @@ function Nav({ user }: { user: IUser }) {
                                 <PlusCircle className='w-5 h-5' />
                                 Add Grocery
                             </Link>
-                            <Link href={""}
+                            <Link href={"/admin/view-grocery"}
                                 className='flex items-center gap-2 bg-white text-green-700 font-semibold px-4 py-1.5
                             rounded-full hover:bg-green-100 transition-all'
                             >
