@@ -11,22 +11,23 @@ const LiveMap = dynamic(() => import("@/components/LiveMap"), {
 })
 import DeliveryChat from "./DeliveryChat"
 import { Loader } from "lucide-react"
+import { Bar, BarChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 interface ILocation {
     latitude: number,
     longitude: number
 }
 
-function DeliveryBoyDashboard() {
+function DeliveryBoyDashboard({ earning }: { earning: number }) {
 
     const [assignments, setAssignments] = useState<any[]>([])
     const { userData } = useSelector((state: RootState) => state.user)
     const [activeOrder, setActiveOrder] = useState<any>(null)
-    const [showOtpBox,setShowOtpBox] = useState(false)
-    const [otp,setOtp]=useState("")
-    const [otpError,setOtpError]=useState("")
-    const [sendOtpLoading,setSendOtpLoading]=useState(false)
-    const [verifyOtpLoading,setVerifyOtpLoading]=useState(false)
+    const [showOtpBox, setShowOtpBox] = useState(false)
+    const [otp, setOtp] = useState("")
+    const [otpError, setOtpError] = useState("")
+    const [sendOtpLoading, setSendOtpLoading] = useState(false)
+    const [verifyOtpLoading, setVerifyOtpLoading] = useState(false)
 
 
     const [userLocation, setUserLocation] = useState<ILocation>(
@@ -138,38 +139,87 @@ function DeliveryBoyDashboard() {
     }, [])
 
 
-    const sendOtp = async ()=>{
+    const sendOtp = async () => {
         setSendOtpLoading(true)
-        try{
+        try {
             const result = await axios.post("/api/delivery/otp/send",
-                {orderId:activeOrder.order._id}
+                { orderId: activeOrder.order._id }
             )
-            
+
             setShowOtpBox(true)
             setSendOtpLoading(false)
 
-        }catch(error){
+        } catch (error) {
             console.log(error)
-             setSendOtpLoading(false)
+            setSendOtpLoading(false)
         }
     }
 
-    const verifyOtp = async()=>{
+    const verifyOtp = async () => {
         setVerifyOtpLoading(true)
-        try{
+        try {
             const result = await axios.post("/api/delivery/otp/verify",
-                {orderId:activeOrder.order._id,otp}
+                { orderId: activeOrder.order._id, otp }
             )
-            
+
             setActiveOrder(null)
             setVerifyOtpLoading(false)
 
             await fetchCurrentOrder()
+            window.location.reload()
 
-        }catch(error){
+        } catch (error) {
             setOtpError("Otp Verification Error")
             setVerifyOtpLoading(false)
         }
+    }
+
+    if (!activeOrder && assignments.length === 0) {
+
+        const todayEarning = [
+            {
+                name: "Today",
+                earning,
+                deliveries: earning / 50
+            }
+        ]
+
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-white
+             to-green-50 p-2 pt-20">
+                <div className="max-w-md w-full text-center">
+                    <h2 className="text-2xl font-bold text-gray-800">No Active Deliveries 🚛</h2>
+                    <p className="text-gray-500 mb-3">Stay online to receive new orders</p>
+
+                    <div className="bg-white border rounded-xl shadow-xl p-3">
+                        <h2 className="font-medium text-green-700 mb-1">Today's Performance</h2>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={todayEarning}>
+                                <XAxis dataKey="name" />
+                                <YAxis yAxisId="left" orientation="left" stroke="#16a34a" />
+                                <YAxis yAxisId="right" orientation="right" stroke="#2563eb" />
+                                <Tooltip />
+                                <Legend />
+                                <Bar yAxisId="left" dataKey="earning" name="Earnings (रु)" fill="#16a34a" />
+                                <Bar yAxisId="right" dataKey="deliveries" name="Deliveries" fill="#2563eb" />
+                            </BarChart>
+                        </ResponsiveContainer>
+
+                        <p className="mt-1 text-lg font-bold text-green-700">
+                            {earning || 0} Earned today
+                        </p>
+                        <button className="mt-3 w-full bg-green-600 hover:bg-green-700 text-white py-1
+                 rounded-lg"
+                            onClick={() => window.location.reload()}
+                        >
+                            Refresh Earning
+                        </button>
+
+                    </div>
+
+                </div>
+            </div>
+        )
     }
 
 
@@ -187,35 +237,35 @@ function DeliveryBoyDashboard() {
 
                     <div className="mt-4 bg-white rounded-xl border shadow p-2 ">
                         {!activeOrder.order.deliveryOtpVerification && !showOtpBox && (
-                            <button 
-                            onClick={sendOtp}
-                            className="w-full py-2 bg-green-600 text-center text-white rounded-lg">
-                            {sendOtpLoading?<Loader size={14} className="animate-spin text-white text-center"/>: "Mark as Delivered"}
-                        </button>
+                            <button
+                                onClick={sendOtp}
+                                className="w-full py-2 bg-green-600 text-center text-white rounded-lg">
+                                {sendOtpLoading ? <Loader size={14} className="animate-spin text-white text-center" /> : "Mark as Delivered"}
+                            </button>
                         )}
                         {
-                            showOtpBox && 
+                            showOtpBox &&
                             <div className="mt-4">
-                            <input type="text" 
-                            className="w-full py-2  border rounded-lg text-center"
-                            placeholder="Enter Otp" maxLength={4}
-                            onChange={(e)=>setOtp(e.target.value)}
-                            value={otp}
-                            />
-                            <button
-                            className="w-full mt-4 bg-blue-600 text-center text-white py-2 rounded-lg "
-                            onClick={verifyOtp}
-                            >
-                            {verifyOtpLoading?<Loader size={14} className="animate-spin text-white text-center"/>: "Verify OTP"}
-                            </button>
-                            {otpError && <div className="text-red-600 mt-2">{otpError}</div>}
+                                <input type="text"
+                                    className="w-full py-2  border rounded-lg text-center"
+                                    placeholder="Enter Otp" maxLength={4}
+                                    onChange={(e) => setOtp(e.target.value)}
+                                    value={otp}
+                                />
+                                <button
+                                    className="w-full mt-4 bg-blue-600 text-center text-white py-2 rounded-lg "
+                                    onClick={verifyOtp}
+                                >
+                                    {verifyOtpLoading ? <Loader size={14} className="animate-spin text-white text-center" /> : "Verify OTP"}
+                                </button>
+                                {otpError && <div className="text-red-600 mt-2">{otpError}</div>}
                             </div>
                         }
 
                         {activeOrder.order.deliveryOtpVerification &&
-                        <div className="text-green-700 text-center font-bold">Delivery Completed!</div>
+                            <div className="text-green-700 text-center font-bold">Delivery Completed!</div>
                         }
-                        
+
                     </div>
 
                 </div>

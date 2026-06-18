@@ -30,6 +30,8 @@ const units = [
 function ViewGrocery() {
 
     const router = useRouter()
+    const [search,setSearch]=useState("")
+    const [filtered,setFiltered]=useState<IGrocery[]>()
     const [groceries, setGroceries] = useState<IGrocery[]>()
     const [editing, setEditing] = useState<IGrocery | null>(null)
     const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -43,6 +45,7 @@ function ViewGrocery() {
             try {
                 const result = await axios.get("/api/admin/get-groceries")
                 setGroceries(result.data)
+                setFiltered(result.data)
             } catch (error) {
                 console.log(error)
             }
@@ -107,6 +110,19 @@ function ViewGrocery() {
         }
     }
 
+
+    const handleSearch = (e:React.SubmitEvent)=>{
+        e.preventDefault()
+        const q=search.toLowerCase()
+
+        setFiltered( 
+            groceries?.filter(
+                (g)=> g.name.toLowerCase().includes(q) || g.category.toLowerCase().includes(q) 
+            )
+        )
+
+    }
+
     return (
         <div className="pt-4 w-[95%] md:w-[85%] mx-auto pb-20">
             <motion.div
@@ -133,17 +149,20 @@ function ViewGrocery() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
+                onSubmit={handleSearch}
                 className="flex items-center bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm
-        mb-8 hover:shadow-lg transition-all max-w-lg mx-auto w-full"
+                 mb-8 hover:shadow-lg transition-all max-w-lg mx-auto w-full"
             >
                 <Search className="text-gray-500 w-5 h-5 mr-2" />
                 <input type="text" className="w-full outline-none text-gray-700 placeholder-gray-400"
                     placeholder="Search by name or category..."
+                    onChange={(e)=>setSearch(e.target.value)}
+                    value={search}
                 />
             </motion.form>
 
             <div className="space-y-3">
-                {groceries?.map((g, i) => (
+                {filtered?.map((g, i) => (
                     <motion.div
                         key={i}
                         whileHover={{ scale: 1.01 }}
