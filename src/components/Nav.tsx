@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { signOut } from 'next-auth/react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useSelector } from 'react-redux'
@@ -27,8 +28,11 @@ function Nav({ user }: { user: IUser }) {
     const profileDropDown = useRef<HTMLDivElement>(null)
     const [searchBarOpen, setSearchBarOpen] = useState(false)
     const [menuOpen, setMenuOpen] = useState(false)
+    const [search, setSearch] = useState("")
 
-    const {cartData} = useSelector((state:RootState)=>state.cart)
+    const router = useRouter()
+
+    const { cartData } = useSelector((state: RootState) => state.cart)
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -39,6 +43,23 @@ function Nav({ user }: { user: IUser }) {
         document.addEventListener("mousedown", handleClickOutside)
         return () => document.removeEventListener("mousedown", handleClickOutside)
     }, [])
+
+
+    const handleSearch = (e: React.SubmitEvent<HTMLFormElement>) => {
+        e.preventDefault()
+
+        const query = search.trim()
+        if (!query) {
+            router.push("/")
+            return
+        }
+
+        router.push(`/?q=${encodeURIComponent(query)}`)
+        setSearch("")
+        setSearchBarOpen(false)
+
+    }
+
 
     const sideBar = menuOpen ? createPortal(
         <AnimatePresence>
@@ -129,10 +150,16 @@ function Nav({ user }: { user: IUser }) {
 
             {user.role == "user" &&
 
-                <form className='hidden md:flex items-center bg-white rounded-full px-4 py-2 w-1/2 max-w-lg shadow-md'>
+                <form className='hidden md:flex items-center bg-white rounded-full px-4 py-2 w-1/2 max-w-lg
+                 shadow-md'
+                    onSubmit={handleSearch}
+                >
                     <Search className='text-gray-500 w-5 h-5 mr-2' />
                     <input type="text" placeholder='Search groceries...' className='width-full outline-none 
-                    text-gray-700 placeholder-gray-700'/>
+                    text-gray-700 placeholder-gray-700'
+                        onChange={(e) => setSearch(e.target.value)}
+                        value={search}
+                    />
                 </form>
             }
 
@@ -261,8 +288,12 @@ function Nav({ user }: { user: IUser }) {
                                   z-40 flex items-center px-4 py-2'
                             >
                                 <Search className='text-gray-500 w-5 h-5 mr-2' />
-                                <form className='grow'>
-                                    <input type='text' placeholder='search groceries...' className='w-full outline-none text-gray-700' />
+                                <form className='grow' onSubmit={handleSearch}>
+                                    <input type='text' placeholder='search groceries...'
+                                        className='w-full outline-none text-gray-700'
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        value={search}
+                                    />
                                 </form>
                                 <button onClick={() => setSearchBarOpen(false)}>
                                     <X className='text-gray-500 w-5 h-5' />
