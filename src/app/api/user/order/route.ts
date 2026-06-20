@@ -3,45 +3,56 @@ import emitEventHandler from "@/lib/emitEventHandler";
 import Order from "@/models/order.model";
 import User from "@/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
+import { aj } from "@/lib/arcjet";
+import { fixedWindow, detectBot } from "@arcjet/next";
 
-export async function POST(req:NextRequest){
-    try{
+const ajRule = aj
+    .withRule(detectBot({ mode: "LIVE", allow: [] }))
+    .withRule(fixedWindow({ mode: "LIVE", max: 3, window: "1m" }));
+
+export async function POST(req: NextRequest) {
+    try {
+        const decision = await ajRule.protect(req);
+        if (decision.isDenied()) {
+            return NextResponse.json({ message: "Too many order requests. Please slow down." }, { status: 429 });
+        }
+
         await connectDB()
 
-        const {userId,items,paymentMethod,totalAmount,address} = await req.json()
-        if(!items || !userId || !paymentMethod || !totalAmount || !address){
+        const { userId, items, paymentMethod, totalAmount, address } = await req.json()
+        if (!items || !userId || !paymentMethod || !totalAmount || !address) {
             return NextResponse.json(
-                {message:"please send all credentials"},
-                {status:400}
+                { message: "please send all credentials" },
+                { status: 400 }
             )
         }
         const user = await User.findById(userId)
-        if(!user){
+        if (!user) {
             return NextResponse.json(
-                {message:"user not found"},
-                {status:400}
+                { message: "user not found" },
+                { status: 400 }
             )
         }
 
         const newOrder = await Order.create({
-            user:userId,
+            user: userId,
             items,
             paymentMethod,
             totalAmount,
             address
         })
 
-        await emitEventHandler("new-order",newOrder)
+        await emitEventHandler("new-order", newOrder)
 
         return NextResponse.json(
-                newOrder,
-                {status:201}
-            )
+            newOrder,
+            { status: 201 }
+        )
 
-    }catch(error){
+    } catch (error) {
         return NextResponse.json(
-                {message:`place order error ${error}`},
-                {status:500}
-            )
+            { message: `place order error ${error}` },
+            { status: 500 }
+        )
     }
 }

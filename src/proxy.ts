@@ -1,8 +1,18 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "./auth";
+import { aj } from "@/lib/arcjet";
 
 export async function proxy(req: NextRequest) {
+    // Arcjet global security check
+    const decision = await aj.protect(req);
+    if (decision.isDenied()) {
+        if (decision.reason.isRateLimit()) {
+            return NextResponse.json({ error: "Global rate limit exceeded" }, { status: 429 });
+        }
+        return NextResponse.json({ error: "Access Forbidden by Firewall" }, { status: 403 });
+    }
+
 
     const { pathname } = req.nextUrl
 
@@ -12,7 +22,7 @@ export async function proxy(req: NextRequest) {
     }
 
     const session = await auth()
-    
+
     if (!session) {
         const loginUrl = new URL("/login", req.url)
         loginUrl.searchParams.set("callbackUrl", req.url)

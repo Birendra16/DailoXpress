@@ -1,8 +1,23 @@
 import connectDB from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { aj } from "@/lib/arcjet";
+import { fixedWindow, detectBot } from "@arcjet/next";
+
+const ajRule = aj
+    .withRule(detectBot({ mode: "LIVE", allow: [] }))
+    .withRule(fixedWindow({ mode: "LIVE", max: 5, window: "1m" }));
 
 export async function POST(req: NextRequest) {
     try {
+        const decision = await ajRule.protect(req);
+
+        if (decision.isDenied()) {
+            if (decision.reason.isRateLimit()) {
+                return NextResponse.json({ message: "Too many AI requests. Please wait a minute." }, { status: 429 });
+            }
+            return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+        }
+
         await connectDB()
 
         const { message, role } = await req.json()
