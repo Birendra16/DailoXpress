@@ -233,7 +233,7 @@ function DeliveryBoyDashboard({ earning }: { earning: number }) {
                     <div className="rounded-xl border shadow-lg overflow-hidden mb-4">
                         <LiveMap userLocation={userLocation} deliveryBoyLocation={deliveryBoyLocation} />
                     </div>
-                    <DeliveryChat orderId={activeOrder.order._id} deliveryBoyId={userData?._id!} />
+                    <DeliveryChat orderId={activeOrder.order._id} deliveryBoyId={userData?._id?.toString()!} />
 
                     <div className="mt-4 bg-white rounded-xl border shadow p-2 ">
                         {!activeOrder.order.deliveryOtpVerification && !showOtpBox && (

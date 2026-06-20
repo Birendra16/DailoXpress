@@ -2,7 +2,6 @@
 
 import { RootState } from '@/redux/store'
 import { Boxes, ClipboardCheck, LogOut, Menu, Package, PlusCircle, Search, ShoppingCartIcon, User, X } from 'lucide-react'
-import mongoose from 'mongoose'
 import { AnimatePresence, motion } from 'motion/react'
 import { signOut } from 'next-auth/react'
 import Image from 'next/image'
@@ -13,7 +12,7 @@ import { createPortal } from 'react-dom'
 import { useSelector } from 'react-redux'
 
 interface IUser {
-    _id?: mongoose.Types.ObjectId
+    _id?: string
     name: string
     email: string
     password?: string

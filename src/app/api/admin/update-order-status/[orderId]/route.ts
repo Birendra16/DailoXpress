@@ -5,11 +5,11 @@ import Order from "@/models/order.model";
 import User from "@/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req:NextRequest,{params}:{params:{orderId:string}}){
+export async function POST(req:NextRequest,context: { params: Promise<{ orderId: string; }>;}){
     try{
         await connectDB()
 
-        const{orderId} = await params
+        const{orderId} = await context.params
         const{status} = await req.json()
         const order = await Order.findById(orderId).populate("user")
         if(!order){
