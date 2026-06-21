@@ -16,8 +16,8 @@ export async function proxy(req: NextRequest) {
 
     const { pathname } = req.nextUrl
 
-    const publicRoutes = ["/", "/login", "/register", "/api/auth"]
-    if (publicRoutes.some((path) => pathname.startsWith(path))) {
+    const publicPrefixes = ["/login", "/register", "/api/auth", "/grocery", "/user/cart"]
+    if (pathname === "/" || publicPrefixes.some((path) => pathname.startsWith(path))) {
         return NextResponse.next()
     }
 
