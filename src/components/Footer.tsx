@@ -8,7 +8,7 @@ interface IUser {
     role?: "user" | "deliveryBoy" | "admin" | string;
 }
 
-function Footer({ user }: { user?: IUser }) {
+function Footer({ user }: { user?: IUser | null }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 40 }}

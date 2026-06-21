@@ -10,6 +10,7 @@ import axios from "axios"
 import dynamic from 'next/dynamic'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
+import { useSession } from "next-auth/react"
 
 const CheckoutMap = dynamic(() => import("@/components/CheckoutMap"), {
     ssr: false,
@@ -20,6 +21,14 @@ const CheckoutMap = dynamic(() => import("@/components/CheckoutMap"), {
 function Checkout() {
 
     const router = useRouter()
+    const { status } = useSession()
+    
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            router.push("/login?callbackUrl=/user/checkout")
+        }
+    }, [status, router])
+
     const { userData } = useSelector((state: RootState) => state.user)
     const { subTotal, deliveryFee, finalTotal, cartData } = useSelector((state: RootState) => state.cart)
     const formik = useFormik({
@@ -228,6 +237,14 @@ function Checkout() {
         }
         fetchAddress()
     }, [position])
+
+    if (status === "loading") {
+        return <div className="flex justify-center items-center min-h-screen"><Loader className="animate-spin text-green-600 w-8 h-8" /></div>
+    }
+
+    if (status === "unauthenticated") {
+        return null
+    }
 
     return (
         <div className="w-[92%] md:w-[80%] mx-auto py-10 relative">

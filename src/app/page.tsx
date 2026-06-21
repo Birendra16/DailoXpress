@@ -24,21 +24,19 @@ export default async function Home(props: {
   const session = await auth()
   const user = await User.findById(session?.user?.id)
 
-  if (!user) {
-    redirect("/login")
-  }
-
-  const inComplete = !user.mobile || !user.role || (!user.mobile && user.role == "user")
+  const inComplete = user && (!user.mobile || !user.role || (!user.mobile && user.role == "user"))
 
   if (inComplete) {
     return <EditRoleMobile />
   }
 
-  const plainUser = JSON.parse(JSON.stringify(user))
+  const plainUser = user ? JSON.parse(JSON.stringify(user)) : null
 
   let groceryList: IGrocery[] = []
+  
+  const role = user?.role || "user"
 
-  if (user.role === "user") {
+  if (role === "user") {
     if (searchParams.q) {
       groceryList = await Grocery.find({
         $or: [
@@ -55,11 +53,11 @@ export default async function Home(props: {
   return (
     <>
       <Nav user={plainUser} />
-      <GeoUpdater userId={plainUser._id} />
+      {plainUser && <GeoUpdater userId={plainUser._id} />}
       {
-        user.role == "user" ? (
+        role == "user" ? (
           <UserDashboard groceryList={groceryList} />
-        ) : user.role == "admin" ? (
+        ) : role == "admin" ? (
           <AdminDashboard />
         ) : <DeliveryBoy />
       }

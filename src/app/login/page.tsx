@@ -5,18 +5,21 @@ import { motion } from "motion/react"
 import Image from 'next/image'
 import { SubmitEvent, useState } from 'react'
 import googleImage from "@/assets/google.png"
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { signIn } from 'next-auth/react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 
-function Login() {
+function LoginContent() {
 
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const [errorMsg, setErrorMsg] = useState("")
 
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const callbackUrl = searchParams.get('callbackUrl') || "/"
 
     const formik = useFormik({
         initialValues: {
@@ -38,11 +41,11 @@ function Login() {
                 })
 
                 if (result?.error) {
-                    // NextAuth returns error code — map to user-friendly message
+
                     setErrorMsg("Invalid email or password. Please try again.")
                     setLoading(false)
                 } else {
-                    router.push("/")
+                    router.push(callbackUrl)
                     router.refresh()
                 }
             } catch (error) {
@@ -142,7 +145,7 @@ function Login() {
 
                 <button className='w-full flex items-center justify-center gap-3 border border-gray-300
             hover:bg-gray-50 py-3 rounded-xl text-gray-700 font-medium transition-all duration-200'
-                    type="button" onClick={() => signIn("google", { callbackUrl: "/" })}
+                    type="button" onClick={() => signIn("google", { callbackUrl })}
                 >
                     <Image
                         src={googleImage}
@@ -165,4 +168,14 @@ function Login() {
     )
 }
 
-export default Login
+export default function Login() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
+    )
+}
