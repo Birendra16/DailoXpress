@@ -103,6 +103,15 @@ function DeliveryBoyDashboard({ earning }: { earning: number }) {
         }
     }
 
+    const handleReject = async (id: string) => {
+        try {
+            await axios.get(`/api/delivery/assignment/${id}/reject-assignment`)
+            setAssignments((prev) => prev.filter(a => a._id !== id))
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     const fetchCurrentOrder = async () => {
         try {
             const result = await axios.get("/api/delivery/current-order")
@@ -290,7 +299,9 @@ function DeliveryBoyDashboard({ earning }: { earning: number }) {
                             >
                                 Accept
                             </button>
-                            <button className="flex-1 bg-red-600 text-white py-2 rounded-lg">
+                            <button className="flex-1 bg-red-600 hover:bg-red-700 transition-colors text-white py-2 rounded-lg"
+                                onClick={() => handleReject(a._id)}
+                            >
                                 Reject
                             </button>
                         </div>
