@@ -6,7 +6,6 @@ import { motion } from "motion/react"
 import { useState } from 'react'
 import Image from 'next/image'
 import axios from 'axios'
-import { useRouter } from 'next/navigation'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 
@@ -24,15 +23,15 @@ const categories = [
 ]
 
 const units = [
-    "kg", "g", "litre", "ml", "piece", "pack"
+    "kg", "g", "litre", "ml", "piece", "packet", "bottle"
 ]
 
 function AddGrocery() {
-    const router = useRouter()
     const [preview, setPreview] = useState<string | null>()
     const [backendImage, setBackendImage] = useState<File | null>()
     const [loading, setLoading] = useState(false)
     const [errorMsg, setErrorMsg] = useState("")
+    const [successMsg, setSuccessMsg] = useState("")
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
@@ -76,7 +75,11 @@ function AddGrocery() {
 
                 await axios.post("/api/admin/add-grocery", formData)
                 setLoading(false)
-                router.push("/admin/view-grocery")
+                formik.resetForm()
+                setBackendImage(null)
+                setPreview(null)
+                setSuccessMsg("Grocery added successfully!")
+                setTimeout(() => setSuccessMsg(""), 2000)
             } catch (error: any) {
                 setErrorMsg(error.response?.data?.message || "Something went wrong")
                 setLoading(false)
@@ -207,6 +210,7 @@ function AddGrocery() {
                         }
                     </div>
                     {errorMsg && <p className='text-red-500 text-sm text-center font-medium'>{errorMsg}</p>}
+                    {successMsg && <p className='text-green-600 text-sm text-center font-semibold bg-green-50 border border-green-200 rounded-xl py-2 px-4'>{successMsg}</p>}
 
                     <motion.button
                         type="submit"

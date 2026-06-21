@@ -11,7 +11,7 @@ import { useDispatch, useSelector } from 'react-redux'
 interface IGrocery {
   _id: string
   name: string
-  price: string
+  price: number
   image: string
   category: string
   unit: string
@@ -19,7 +19,7 @@ interface IGrocery {
   updatedAt?: Date
 }
 
-function GroceryItemCard({ item }: { item: IGrocery }) {
+function GroceryItemCard({ item, index }: { item: IGrocery, index?: number }) {
 
   const dispatch = useDispatch<AppDispatch>()
 
@@ -43,6 +43,7 @@ function GroceryItemCard({ item }: { item: IGrocery }) {
           fill
           alt={item.name}
           sizes='(max-width:768px) 100vw, 25vw'
+          priority={index === 0}
           className='object-contain p-4 transition-transform duration-500 group-hover:scale-105'
         />
         <div className='absolute inset-0 bg-linear-to-t from-black/10 to-transparent opacity-0

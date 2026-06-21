@@ -15,7 +15,7 @@ import { useEffect, useState } from "react"
         {
             grocery: string,
             name: string,
-            price: string,
+            price: number,
             unit: string,
             image: string,
             quantity: number
@@ -226,7 +226,7 @@ function AdminOrderCard({order}:{order:IOrder}) {
                                 </div>
                             </div>
                             <p className="text-sm font-semibold text-gray-800">
-                                रु{Number(item.price)*item.quantity}
+                                रु{item.price * item.quantity}
                             </p>
 
                         </div>

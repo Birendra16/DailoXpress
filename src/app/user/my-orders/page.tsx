@@ -17,7 +17,7 @@ import { IUser } from "@/models/user.model"
           {
               grocery: string,
               name: string,
-              price: string,
+              price: number,
               unit: string,
               image: string,
               quantity: number

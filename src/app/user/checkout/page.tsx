@@ -119,19 +119,12 @@ function Checkout() {
         }
 
         try {
-            const result = await axios.post("/api/user/order", {
-                userId: userData?._id,
-                items: cartData.map(item => (
-                    {
-                        grocery: item._id,
-                        name: item.name,
-                        price: item.price,
-                        unit: item.unit,
-                        quantity: item.quantity,
-                        image: item.image
-                    }
-                )),
-                totalAmount: finalTotal,
+            // userId and totalAmount are now derived securely on the server
+            await axios.post("/api/user/order", {
+                items: cartData.map(item => ({
+                    grocery: item._id,
+                    quantity: item.quantity,
+                })),
                 address: {
                     fullName: values.fullName,
                     mobile: values.mobile,
@@ -161,21 +154,12 @@ function Checkout() {
 
         setEsewaLoading(true)
         try {
-            const esewaTotal = Number(subTotal) + Number(deliveryFee ?? 0)
-
+            // userId, subTotal, deliveryFee, totalAmount are now derived securely on the server
             const res = await axios.post("/api/user/esewa/initiate", {
-                userId: userData?._id,
                 items: cartData.map(item => ({
                     grocery: item._id,
-                    name: item.name,
-                    price: item.price,
-                    unit: item.unit,
                     quantity: item.quantity,
-                    image: item.image
                 })),
-                totalAmount: esewaTotal,
-                subTotal: subTotal,
-                deliveryFee: deliveryFee,
                 address: {
                     fullName: values.fullName,
                     mobile: values.mobile,
@@ -189,14 +173,6 @@ function Checkout() {
             })
 
             const { esewaParams, paymentUrl } = res.data
-
-            console.log("ESEWA DEBUG", {
-                amount: esewaParams.amount,
-                total_amount: esewaParams.total_amount,
-                delivery: esewaParams.product_delivery_charge,
-                uuid: esewaParams.transaction_uuid,
-                signature: esewaParams.signature
-            });
 
             // eSewa requires a browser form POST — we create and submit one dynamically
             const form = document.createElement("form")

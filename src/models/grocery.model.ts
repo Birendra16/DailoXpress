@@ -3,7 +3,7 @@ import mongoose from "mongoose"
 export interface IGrocery {
     _id?: mongoose.Types.ObjectId
     name: string
-    price: string
+    price: number
     image: string
     category: string
     unit: string
@@ -43,7 +43,7 @@ const grocerySchema = new mongoose.Schema<IGrocery>({
         required: true
     },
     price: {
-        type: String,
+        type: Number,
         required: true
     },
     unit: {

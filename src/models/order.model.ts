@@ -8,7 +8,7 @@ export interface IOrder {
         {
             grocery: mongoose.Types.ObjectId,
             name: string,
-            price: string,
+            price: number,
             unit: string,
             image: string,
             quantity: number
@@ -35,7 +35,7 @@ export interface IOrder {
     createdAt?: Date
     updatedAt?: Date
     deliveryOtp:string | null
-    deliveryOtpVerification:Boolean
+    deliveryOtpVerification:boolean
     deliveredAt:Date
 }
 
@@ -53,7 +53,7 @@ const orderSchema = new mongoose.Schema<IOrder>({
                 required: true
             },
             name: String,
-            price: String,
+            price: Number,
             unit: String,
             image: String,
             quantity: Number,

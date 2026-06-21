@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
             imageUrl = await uploadOnCloudinary(file)
         }
 
-        const grocery = await Grocery.findByIdAndUpdate(groceryId,{
-            name, price, category, unit, description, image: imageUrl
+        const grocery = await Grocery.findByIdAndUpdate(groceryId, {
+            name, price: Number(price), category, unit, description, image: imageUrl
         })
 
         return NextResponse.json(

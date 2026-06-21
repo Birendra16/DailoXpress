@@ -25,9 +25,9 @@ function DeliveryChat({ orderId, deliveryBoyId }: props) {
         const socket = getSocket()
         socket.emit("join-room", orderId)
 
-        const handleMessage = (message: any) => {
+        const handleMessage = (message: { roomId: string; text: string; senderId: string; time: string; _id?: string }) => {
             if (message.roomId === orderId) {
-                setMessages((prev) => [...(prev || []), message])
+                setMessages((prev) => [...(prev || []), message as any])
             }
         }
 

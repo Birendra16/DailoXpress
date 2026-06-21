@@ -14,6 +14,7 @@ import { redirect } from "next/navigation";
 export default async function Home(props: {
   searchParams: Promise<{
     q: string
+    page: string
   }>
 }) {
 
@@ -32,21 +33,29 @@ export default async function Home(props: {
 
   const plainUser = user ? JSON.parse(JSON.stringify(user)) : null
 
+  const ITEMS_PER_PAGE = 20
+  const currentPage = Math.max(0, Number(searchParams.page) || 0)
+
   let groceryList: IGrocery[] = []
-  
+  let totalGroceryCount = 0
+
   const role = user?.role || "user"
 
   if (role === "user") {
-    if (searchParams.q) {
-      groceryList = await Grocery.find({
-        $or: [
-          { name: { $regex: searchParams?.q || "", $options: "i" } },
-          { category: { $regex: searchParams?.q || "", $options: "i" } },
-        ]
-      })
-    } else {
-      groceryList = await Grocery.find({})
-    }
+    const query = searchParams.q
+      ? {
+          $or: [
+            { name: { $regex: searchParams.q, $options: "i" } },
+            { category: { $regex: searchParams.q, $options: "i" } },
+          ]
+        }
+      : {}
+
+    totalGroceryCount = await Grocery.countDocuments(query)
+    groceryList = await Grocery.find(query)
+      .sort({ createdAt: -1 })
+      .skip(currentPage * ITEMS_PER_PAGE)
+      .limit(ITEMS_PER_PAGE)
   }
 
 
@@ -56,7 +65,7 @@ export default async function Home(props: {
       {plainUser && <GeoUpdater userId={plainUser._id} />}
       {
         role == "user" ? (
-          <UserDashboard groceryList={groceryList} />
+          <UserDashboard groceryList={groceryList} totalCount={totalGroceryCount} currentPage={currentPage} itemsPerPage={ITEMS_PER_PAGE} />
         ) : role == "admin" ? (
           <AdminDashboard />
         ) : <DeliveryBoy />

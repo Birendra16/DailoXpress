@@ -1,9 +1,11 @@
 import connectDB from "@/lib/db";
 import Order from "@/models/order.model";
 import User from "@/models/user.model";
+import Grocery from "@/models/grocery.model";
 import { createHmac } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { auth } from "@/auth";
 
 const addressSchema = z.object({
     fullName: z.string().min(3, "Name must be at least 3 characters").max(50, "Name cannot exceed 50 characters"),
@@ -41,12 +43,19 @@ export async function POST(req: NextRequest) {
     try {
         await connectDB();
 
-        const body = await req.json();
-        const { userId, items, totalAmount, subTotal, deliveryFee, address } = body;
+        // 1. Get authenticated user ID from session securely
+        const session = await auth();
+        if (!session?.user?.id) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+        }
+        const userId = session.user.id;
 
-        if (!items || !userId || !totalAmount || subTotal === undefined || !address) {
+        const body = await req.json();
+        const { items, address } = body;
+
+        if (!items || !items.length || !address) {
             return NextResponse.json(
-                { message: `Missing fields: ${!userId ? 'userId ' : ''} ${!items ? 'items ' : ''} ${!totalAmount ? 'totalAmount ' : ''} ${subTotal === undefined ? 'subTotal ' : ''} ${!address ? 'address' : ''}` },
+                { message: `Missing fields: ${!items ? 'items ' : ''} ${!address ? 'address' : ''}` },
                 { status: 400 }
             );
         }
@@ -67,6 +76,31 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // 2. Validate prices and calculate subTotal securely
+        let calculatedSubTotal = 0;
+        const verifiedItems = [];
+
+        for (const item of items) {
+            const dbGrocery = await Grocery.findById(item.grocery);
+            if (!dbGrocery) {
+                return NextResponse.json({ message: `Item not found: ${item.name}` }, { status: 404 });
+            }
+
+            const verifiedPrice = dbGrocery.price;
+            calculatedSubTotal += verifiedPrice * item.quantity;
+
+            verifiedItems.push({
+                ...item,
+                price: dbGrocery.price,
+                name: dbGrocery.name,
+                image: dbGrocery.image,
+                unit: dbGrocery.unit
+            });
+        }
+
+        const calculatedDeliveryFee = calculatedSubTotal > 500 ? 0 : 50;
+        const calculatedTotalAmount = calculatedSubTotal + calculatedDeliveryFee;
+
         // Generate a unique transaction UUID: YYYYMMDD-HHMMSS-random
         const now = new Date();
         const pad = (n: number) => String(n).padStart(2, "0");
@@ -74,24 +108,9 @@ export async function POST(req: NextRequest) {
 
         const productCode = process.env.ESEWA_PRODUCT_CODE!;
 
-        const amount = Number(subTotal);
-        const delivery = Number(deliveryFee ?? 0);
-        const total = amount + delivery;
-        const clientTotal = Number(totalAmount);
-
-        if (!Number.isFinite(amount) || !Number.isFinite(delivery) || !Number.isFinite(clientTotal)) {
-            return NextResponse.json(
-                { message: "Invalid eSewa amount values" },
-                { status: 400 }
-            );
-        }
-
-        if (clientTotal !== total) {
-            return NextResponse.json(
-                { message: "eSewa total mismatch", amount, delivery, total, clientTotal },
-                { status: 400 }
-            );
-        }
+        const amount = calculatedSubTotal;
+        const delivery = calculatedDeliveryFee;
+        const total = calculatedTotalAmount;
 
         // eSewa requires total_amount as a string (strict UAT validation)
         // Signature is computed on the exact string used in the form
@@ -101,7 +120,7 @@ export async function POST(req: NextRequest) {
         // Persist a PENDING order so we can update it after callback
         const newOrder = await Order.create({
             user: userId,
-            items,
+            items: verifiedItems,
             paymentMethod: "online",
             totalAmount: total,
             address,

@@ -24,7 +24,7 @@ const categories = [
 ]
 
 const units = [
-    "kg", "g", "litre", "ml", "piece", "pack"
+    "kg", "g", "litre", "ml", "piece", "packet", "bottle"
 ]
 
 
@@ -83,7 +83,7 @@ function ViewGrocery() {
             description: editing?.description || '',
             category: editing?.category || '',
             unit: editing?.unit || '',
-            price: editing?.price || ''
+            price: editing?.price !== undefined ? String(editing.price) : ''
         },
         validationSchema: Yup.object({
             name: Yup.string().min(2, "Name must be at least 2 characters").max(100, "Name cannot exceed 100 characters").required("Required"),

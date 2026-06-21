@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 interface IGrocery {
     _id: string,
     name: string,
-    price: string,
+    price: number,
     image: string,
     category: string,
     unit: string,
@@ -57,7 +57,7 @@ const cartSlice = createSlice({
             cartSlice.caseReducers.calculateTotals(state)
         },
         calculateTotals:(state)=>{
-            state.subTotal = state.cartData.reduce((sum,item)=>sum+Number(item.price)*item.quantity,0)
+            state.subTotal = state.cartData.reduce((sum, item) => sum + item.price * item.quantity, 0)
             state.deliveryFee = state.subTotal>500?0:50
             state.finalTotal = state.subTotal + state.deliveryFee
         },

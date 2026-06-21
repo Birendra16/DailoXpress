@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         }
 
         const grocery = await Grocery.create({
-            name, price, category, unit, description, image: imageUrl
+            name, price: Number(price), category, unit, description, image: imageUrl
         })
 
         return NextResponse.json(

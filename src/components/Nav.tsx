@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { signOut } from 'next-auth/react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useSelector } from 'react-redux'
@@ -23,17 +23,17 @@ interface IUser {
 
 function Nav({ user }: { user?: IUser | null }) {
 
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const role = user?.role || "user"
+
+    const { cartData } = useSelector((state: RootState) => state.cart)
+
     const [open, setOpen] = useState(false)
     const profileDropDown = useRef<HTMLDivElement>(null)
     const [searchBarOpen, setSearchBarOpen] = useState(false)
     const [menuOpen, setMenuOpen] = useState(false)
-    const [search, setSearch] = useState("")
-
-    const router = useRouter()
-    
-    const role = user?.role || "user"
-
-    const { cartData } = useSelector((state: RootState) => state.cart)
+    const [search, setSearch] = useState(searchParams.get("q") || "")
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {

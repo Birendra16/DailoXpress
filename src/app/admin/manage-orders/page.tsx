@@ -15,7 +15,7 @@ interface IOrder {
         {
             grocery: string,
             name: string,
-            price: string,
+            price: number,
             unit: string,
             image: string,
             quantity: number
