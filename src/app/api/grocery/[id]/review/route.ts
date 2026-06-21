@@ -3,6 +3,12 @@ import connectDB from "@/lib/db";
 import Grocery from "@/models/grocery.model";
 import Order from "@/models/order.model";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+const reviewSchema = z.object({
+    rating: z.number().min(1, "Rating must be at least 1").max(5, "Rating cannot exceed 5"),
+    comment: z.string().min(5, "Comment must be at least 5 characters").max(500, "Comment cannot exceed 500 characters")
+});
 
 export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
     try {
@@ -15,11 +21,14 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
 
         const params = await props.params;
         const { id } = params;
-        const { rating, comment } = await req.json();
+        const body = await req.json();
+        const validation = reviewSchema.safeParse(body);
 
-        if (!rating || !comment) {
-            return NextResponse.json({ message: "Rating and comment are required" }, { status: 400 });
+        if (!validation.success) {
+            return NextResponse.json({ message: validation.error.issues[0].message }, { status: 400 });
         }
+
+        const { rating, comment } = validation.data;
 
         const userId = session.user.id;
 

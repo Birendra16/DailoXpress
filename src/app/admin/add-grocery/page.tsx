@@ -7,6 +7,8 @@ import { useState } from 'react'
 import Image from 'next/image'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
+import { useFormik } from 'formik'
+import * as Yup from 'yup'
 
 const categories = [
     "Fruits & Vegetables",
@@ -27,14 +29,10 @@ const units = [
 
 function AddGrocery() {
     const router = useRouter()
-    const [name, setName] = useState("")
-    const [description, setDescription] = useState("")
-    const [category, setCategory] = useState("")
-    const [unit, setUnit] = useState("")
-    const [price, setPrice] = useState("")
     const [preview, setPreview] = useState<string | null>()
     const [backendImage, setBackendImage] = useState<File | null>()
     const [loading, setLoading] = useState(false)
+    const [errorMsg, setErrorMsg] = useState("")
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
@@ -42,31 +40,49 @@ function AddGrocery() {
         const file = files[0]
         setBackendImage(file)
         setPreview(URL.createObjectURL(file))
+        setErrorMsg("")
     }
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
-        setLoading(true)
-        try {
-            const formData = new FormData()
-            formData.append("name", name)
-            formData.append("description", description)
-            formData.append("category", category)
-            formData.append("price", price)
-            formData.append("unit", unit)
-
-            if (backendImage) {
-                formData.append("image", backendImage)
+    const formik = useFormik({
+        initialValues: {
+            name: '',
+            description: '',
+            category: '',
+            unit: '',
+            price: ''
+        },
+        validationSchema: Yup.object({
+            name: Yup.string().min(2, "Name must be at least 2 characters").max(100, "Name cannot exceed 100 characters").required("Required"),
+            description: Yup.string().min(10, "Description must be at least 10 characters").max(500, "Description cannot exceed 500 characters"),
+            category: Yup.string().required("Required"),
+            unit: Yup.string().required("Required"),
+            price: Yup.number().positive("Must be a positive number").required("Required")
+        }),
+        onSubmit: async (values) => {
+            if (!backendImage) {
+                setErrorMsg("Image is required")
+                return
             }
+            setLoading(true)
+            setErrorMsg("")
+            try {
+                const formData = new FormData()
+                formData.append("name", values.name)
+                formData.append("description", values.description)
+                formData.append("category", values.category)
+                formData.append("price", values.price)
+                formData.append("unit", values.unit)
+                formData.append("image", backendImage)
 
-            await axios.post("/api/admin/add-grocery", formData)
-            setLoading(false)
-            router.push("/admin/view-grocery")
-        } catch (error) {
-            console.log(error)
-            setLoading(false)
+                await axios.post("/api/admin/add-grocery", formData)
+                setLoading(false)
+                router.push("/admin/view-grocery")
+            } catch (error: any) {
+                setErrorMsg(error.response?.data?.message || "Something went wrong")
+                setLoading(false)
+            }
         }
-    }
+    })
 
     return (
         <div className='min-h-screen flex items-center justify-center bg-linear-to-br from-green-50
@@ -100,7 +116,7 @@ function AddGrocery() {
                 </div>
 
                 <form className='flex flex-col gap-2 w-full'
-                    onSubmit={handleSubmit}
+                    onSubmit={formik.handleSubmit}
                 >
 
                     <div>
@@ -109,12 +125,10 @@ function AddGrocery() {
                             <span className='text-red-500'>*</span>
                         </label>
                         <input type='text' id='name' placeholder='eg: sweets,Milk ...'
-                            onChange={(e) => setName(e.target.value)}
-                            value={name}
-                            className='w-full border
-                        border-gray-300 rounded-xl px-4 py-1.5 outline-none focus:ring-2 focus:ring-green-400
-                        transition-all'/>
-
+                            {...formik.getFieldProps('name')}
+                            className={`w-full border rounded-xl px-4 py-1.5 outline-none focus:ring-2 transition-all
+                            ${formik.touched.name && formik.errors.name ? 'border-red-500 focus:ring-red-400' : 'border-gray-300 focus:ring-green-400'}`} />
+                        {formik.touched.name && formik.errors.name && <p className='text-red-500 text-xs mt-1'>{formik.errors.name}</p>}
                     </div>
 
                     <div>
@@ -122,40 +136,39 @@ function AddGrocery() {
                             Description
                         </label>
                         <textarea id='description' placeholder='About the product...'
-                            onChange={(e) => setDescription(e.target.value)}
-                            value={description}
-                            className='w-full border border-gray-300 rounded-xl px-4 py-1.5 outline-none focus:ring-2 focus:ring-green-400 transition-all min-h-[70px]' />
+                            {...formik.getFieldProps('description')}
+                            className={`w-full border rounded-xl px-4 py-1.5 outline-none focus:ring-2 transition-all min-h-[70px]
+                            ${formik.touched.description && formik.errors.description ? 'border-red-500 focus:ring-red-400' : 'border-gray-300 focus:ring-green-400'}`} />
+                        {formik.touched.description && formik.errors.description && <p className='text-red-500 text-xs mt-1'>{formik.errors.description}</p>}
                     </div>
 
                     <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
                         <div>
                             <label className='block text-sm text-gray-800 font-medium mb-1'>Category<span
                                 className='text-red-500'>*</span></label>
-                            <select name='category'
-                                onChange={(e) => setCategory(e.target.value)}
-                                value={category}
-                                className='w-full border border-gray-300 rounded-xl px-4
-                            py-1.5 outline-none focus:ring-2 focus:ring-green-400 transition-all bg-white'>
+                            <select {...formik.getFieldProps('category')}
+                                className={`w-full border rounded-xl px-4 py-1.5 outline-none focus:ring-2 transition-all bg-white
+                                ${formik.touched.category && formik.errors.category ? 'border-red-500 focus:ring-red-400' : 'border-gray-300 focus:ring-green-400'}`}>
                                 <option value="">Select Category</option>
                                 {categories.map(cat => (
                                     <option key={cat} value={cat}>{cat}</option>
                                 ))}
                             </select>
+                            {formik.touched.category && formik.errors.category && <p className='text-red-500 text-xs mt-1'>{formik.errors.category}</p>}
                         </div>
 
                         <div>
                             <label className='block text-sm text-gray-800 font-medium mb-1'>Unit<span
                                 className='text-red-500'>*</span></label>
-                            <select name='unit'
-                                onChange={(e) => setUnit(e.target.value)}
-                                value={unit}
-                                className='w-full border border-gray-300 rounded-xl px-4
-                            py-1.5 outline-none focus:ring-2 focus:ring-green-400 transition-all bg-white'>
+                            <select {...formik.getFieldProps('unit')}
+                                className={`w-full border rounded-xl px-4 py-1.5 outline-none focus:ring-2 transition-all bg-white
+                                ${formik.touched.unit && formik.errors.unit ? 'border-red-500 focus:ring-red-400' : 'border-gray-300 focus:ring-green-400'}`}>
                                 <option value="">Select Unit</option>
                                 {units.map(cat => (
                                     <option key={cat} value={cat}>{cat}</option>
                                 ))}
                             </select>
+                            {formik.touched.unit && formik.errors.unit && <p className='text-red-500 text-xs mt-1'>{formik.errors.unit}</p>}
                         </div>
 
                     </div>
@@ -166,12 +179,10 @@ function AddGrocery() {
                             <span className='text-red-500'>*</span>
                         </label>
                         <input type='text' id='price' placeholder='eg. 130'
-                            onChange={(e) => setPrice(e.target.value)}
-                            value={price}
-                            className='w-full border
-                        border-gray-300 rounded-xl px-4 py-1.5 outline-none focus:ring-2 focus:ring-green-400
-                        transition-all'/>
-
+                            {...formik.getFieldProps('price')}
+                            className={`w-full border rounded-xl px-4 py-1.5 outline-none focus:ring-2 transition-all
+                            ${formik.touched.price && formik.errors.price ? 'border-red-500 focus:ring-red-400' : 'border-gray-300 focus:ring-green-400'}`} />
+                        {formik.touched.price && formik.errors.price && <p className='text-red-500 text-xs mt-1'>{formik.errors.price}</p>}
                     </div>
 
                     <div className='flex flex-col sm:flex-row items-center gap-5'>
@@ -194,8 +205,8 @@ function AddGrocery() {
                                 className='rounded-xl shadow-md border border-gray-200 object-cover'
                             />
                         }
-
                     </div>
+                    {errorMsg && <p className='text-red-500 text-sm text-center font-medium'>{errorMsg}</p>}
 
                     <motion.button
                         type="submit"

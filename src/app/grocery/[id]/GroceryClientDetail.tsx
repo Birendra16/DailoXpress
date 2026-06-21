@@ -9,27 +9,36 @@ import Link from 'next/link'
 import { useDispatch, useSelector } from 'react-redux'
 import axios from 'axios'
 import { useState } from 'react'
+import { useFormik } from 'formik'
+import * as Yup from 'yup'
 
 export default function GroceryClientDetail({ item, hasPurchased }: { item: any, hasPurchased: boolean }) {
     const dispatch = useDispatch<AppDispatch>()
     const { cartData } = useSelector((state: RootState) => state.cart)
     const cartItem = cartData.find(i => i._id.toString() == item._id)
 
-    const [rating, setRating] = useState(0)
-    const [comment, setComment] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    const submitReview = async () => {
-        if (rating === 0 || !comment.trim()) return alert("Please provide a rating and a comment.")
-        setIsSubmitting(true)
-        try {
-            await axios.post(`/api/grocery/${item._id}/review`, { rating, comment })
-            window.location.reload()
-        } catch(error: any) {
-            alert(error.response?.data?.message || "Failed to submit review")
-            setIsSubmitting(false)
+    const formik = useFormik({
+        initialValues: {
+            rating: 0,
+            comment: ''
+        },
+        validationSchema: Yup.object({
+            rating: Yup.number().min(1, "Please provide a rating").max(5).required("Rating is required"),
+            comment: Yup.string().min(5, "Comment must be at least 5 characters").max(500, "Comment cannot exceed 500 characters").required("Comment is required")
+        }),
+        onSubmit: async (values) => {
+            setIsSubmitting(true)
+            try {
+                await axios.post(`/api/grocery/${item._id}/review`, values)
+                window.location.reload()
+            } catch (error: any) {
+                alert(error.response?.data?.message || "Failed to submit review")
+                setIsSubmitting(false)
+            }
         }
-    }
+    })
 
     return (
         <div className="w-[90%] md:w-[80%] lg:w-[70%] mx-auto pb-24">
@@ -53,7 +62,7 @@ export default function GroceryClientDetail({ item, hasPurchased }: { item: any,
                 <div className="w-full md:w-1/2 p-8 flex flex-col justify-center">
                     <p className="text-sm font-semibold text-green-600 uppercase tracking-wider mb-2">{item.category}</p>
                     <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{item.name}</h1>
-                    
+
                     <div className="flex items-center gap-2 mb-6">
                         <div className="flex text-yellow-400">
                             {[1, 2, 3, 4, 5].map(star => (
@@ -69,7 +78,7 @@ export default function GroceryClientDetail({ item, hasPurchased }: { item: any,
                     </div>
 
                     {!cartItem ?
-                        <motion.button 
+                        <motion.button
                             className='flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white rounded-full py-4 px-8 text-lg font-bold transition-all shadow-md hover:shadow-xl'
                             whileTap={{ scale: 0.96 }}
                             onClick={(e) => {
@@ -79,13 +88,13 @@ export default function GroceryClientDetail({ item, hasPurchased }: { item: any,
                         >
                             <ShoppingCart size={24} /> Add to Cart
                         </motion.button>
-                    :
+                        :
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             className='flex items-center justify-between bg-green-50 border border-green-200 rounded-full py-3 px-6 gap-4 shadow-sm'
                         >
-                            <button 
+                            <button
                                 className='w-12 h-12 flex items-center justify-center rounded-full bg-white hover:bg-green-100 transition-all shadow-sm'
                                 onClick={(e) => {
                                     e.preventDefault();
@@ -95,7 +104,7 @@ export default function GroceryClientDetail({ item, hasPurchased }: { item: any,
                                 <Minus size={24} className='text-green-700' />
                             </button>
                             <span className='text-2xl font-bold text-gray-800 w-12 text-center'>{cartItem.quantity}</span>
-                            <button 
+                            <button
                                 className='w-12 h-12 flex items-center justify-center rounded-full bg-white hover:bg-green-100 transition-all shadow-sm'
                                 onClick={(e) => {
                                     e.preventDefault();
@@ -124,7 +133,7 @@ export default function GroceryClientDetail({ item, hasPurchased }: { item: any,
             {/* Ratings and Reviews */}
             <div className="bg-white rounded-3xl shadow-md border border-gray-100 p-8">
                 <h2 className="text-2xl font-bold text-gray-800 mb-8 border-b pb-4">Ratings & Reviews</h2>
-                
+
                 {item.reviews && item.reviews.length > 0 ? (
                     <div className="space-y-6 mb-10">
                         {item.reviews.map((review: any, index: number) => (
@@ -150,24 +159,29 @@ export default function GroceryClientDetail({ item, hasPurchased }: { item: any,
                 {hasPurchased ? (
                     <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 mt-8">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">Write a Review</h3>
-                        <div className="flex items-center gap-2 mb-4">
+                        <div className="flex items-center gap-2 mb-2">
                             {[1, 2, 3, 4, 5].map(star => (
-                                <button key={star} onClick={() => setRating(star)} className="focus:outline-none">
-                                    <Star size={28} className={star <= rating ? "fill-yellow-400 text-yellow-400 cursor-pointer" : "text-gray-300 cursor-pointer"} />
+                                <button key={star} onClick={() => formik.setFieldValue('rating', star)} className="focus:outline-none" type="button">
+                                    <Star size={28} className={star <= formik.values.rating ? "fill-yellow-400 text-yellow-400 cursor-pointer" : "text-gray-300 cursor-pointer"} />
                                 </button>
                             ))}
                         </div>
-                        <textarea 
-                            className="w-full border border-gray-300 rounded-xl p-4 mb-4 outline-none focus:ring-2 focus:ring-green-500" 
-                            rows={3} 
+                        {formik.touched.rating && formik.errors.rating && <p className='text-red-500 text-xs mb-4'>{formik.errors.rating}</p>}
+
+                        <textarea
+                            className={`w-full border rounded-xl p-4 mt-2 mb-2 outline-none focus:ring-2 focus:ring-green-500 
+                            ${formik.touched.comment && formik.errors.comment ? 'border-red-500' : 'border-gray-300'}`}
+                            rows={3}
                             placeholder="What do you think about this product?"
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
+                            {...formik.getFieldProps('comment')}
                         />
-                        <button 
-                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full transition-all disabled:opacity-50"
-                            onClick={submitReview}
+                        {formik.touched.comment && formik.errors.comment && <p className='text-red-500 text-xs mb-4'>{formik.errors.comment}</p>}
+
+                        <button
+                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 mt-2 rounded-full transition-all disabled:opacity-50"
+                            onClick={() => formik.handleSubmit()}
                             disabled={isSubmitting}
+                            type="button"
                         >
                             {isSubmitting ? "Submitting..." : "Submit Review"}
                         </button>

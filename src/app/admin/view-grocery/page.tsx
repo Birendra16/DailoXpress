@@ -7,7 +7,8 @@ import { ArrowLeft, Loader, Package, Pencil, Search, Upload, X } from "lucide-re
 import { useRouter } from "next/navigation"
 import { IGrocery } from "@/models/grocery.model"
 import Image from "next/image"
-import { GSSP_NO_RETURNED_VALUE } from "next/dist/lib/constants"
+import { useFormik } from "formik"
+import * as Yup from "yup"
 
 const categories = [
     "Fruits & Vegetables",
@@ -30,8 +31,8 @@ const units = [
 function ViewGrocery() {
 
     const router = useRouter()
-    const [search,setSearch]=useState("")
-    const [filtered,setFiltered]=useState<IGrocery[]>()
+    const [search, setSearch] = useState("")
+    const [filtered, setFiltered] = useState<IGrocery[]>()
     const [groceries, setGroceries] = useState<IGrocery[]>()
     const [editing, setEditing] = useState<IGrocery | null>(null)
     const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -75,33 +76,51 @@ function ViewGrocery() {
         }
     }
 
-    const handleEdit = async () => {
-        setLoading(true)
-        if (!editing) return
-        try {
-            const formData = new FormData()
-            formData.append("groceryId", editing?._id?.toString()!)
-            formData.append("name", editing?.name)
-            formData.append("category", editing.category)
-            formData.append("price", editing.price)
-            formData.append("unit", editing.unit)
-            if (editing.description) {
-                formData.append("description", editing.description)
-            } else {
-                formData.append("description", "")
-            }
+    const formik = useFormik({
+        enableReinitialize: true,
+        initialValues: {
+            name: editing?.name || '',
+            description: editing?.description || '',
+            category: editing?.category || '',
+            unit: editing?.unit || '',
+            price: editing?.price || ''
+        },
+        validationSchema: Yup.object({
+            name: Yup.string().min(2, "Name must be at least 2 characters").max(100, "Name cannot exceed 100 characters").required("Required"),
+            description: Yup.string().min(10, "Description must be at least 10 characters").max(500, "Description cannot exceed 500 characters"),
+            category: Yup.string().required("Required"),
+            unit: Yup.string().required("Required"),
+            price: Yup.number().positive("Must be a positive number").required("Required")
+        }),
+        onSubmit: async (values) => {
+            setLoading(true)
+            if (!editing) return
+            try {
+                const formData = new FormData()
+                formData.append("groceryId", editing?._id?.toString()!)
+                formData.append("name", values.name)
+                formData.append("category", values.category)
+                formData.append("price", values.price.toString())
+                formData.append("unit", values.unit)
+                if (values.description) {
+                    formData.append("description", values.description)
+                } else {
+                    formData.append("description", "")
+                }
 
-            if (backendImage) {
-                formData.append("image", backendImage)
-            }
+                if (backendImage) {
+                    formData.append("image", backendImage)
+                }
 
-            const result = await axios.post("/api/admin/edit-grocery", formData)
-            setLoading(false)
-            window.location.reload()
-        } catch (error) {
-            console.log(error)
+                await axios.post("/api/admin/edit-grocery", formData)
+                setLoading(false)
+                window.location.reload()
+            } catch (error) {
+                console.log(error)
+                setLoading(false)
+            }
         }
-    }
+    })
 
     const handleDelete = async () => {
         setDeleteLoading(true)
@@ -116,13 +135,13 @@ function ViewGrocery() {
     }
 
 
-    const handleSearch = (e:React.SubmitEvent)=>{
+    const handleSearch = (e: React.SubmitEvent) => {
         e.preventDefault()
-        const q=search.toLowerCase()
+        const q = search.toLowerCase()
 
-        setFiltered( 
+        setFiltered(
             groceries?.filter(
-                (g)=> g.name.toLowerCase().includes(q) || g.category.toLowerCase().includes(q) 
+                (g) => g.name.toLowerCase().includes(q) || g.category.toLowerCase().includes(q)
             )
         )
 
@@ -161,7 +180,7 @@ function ViewGrocery() {
                 <Search className="text-gray-500 w-5 h-5 mr-2" />
                 <input type="text" className="w-full outline-none text-gray-700 placeholder-gray-400"
                     placeholder="Search by name or category..."
-                    onChange={(e)=>setSearch(e.target.value)}
+                    onChange={(e) => setSearch(e.target.value)}
                     value={search}
                 />
             </motion.form>
@@ -250,72 +269,81 @@ function ViewGrocery() {
                                 />
                             </div>
 
-                            <div className="space-y-3">
-                                <input
-                                    type="text"
-                                    placeholder="Enter Grocery Name"
-                                    value={editing.name}
-                                    onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm
-                        focus:ring-2 focus:ring-green-500 outline-none"/>
+                            <form className="space-y-3" onSubmit={formik.handleSubmit}>
+                                <div>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter Grocery Name"
+                                        {...formik.getFieldProps('name')}
+                                        className={`w-full border rounded-lg p-2 text-sm focus:ring-2 outline-none
+                                        ${formik.touched.name && formik.errors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'}`} />
+                                    {formik.touched.name && formik.errors.name && <p className='text-red-500 text-xs mt-1'>{formik.errors.name}</p>}
+                                </div>
 
-                                <select
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2
-                        focus:ring-green-500 outline-none bg-white"
-                                    value={editing.category}
-                                    onChange={(e) => setEditing({ ...editing, category: e.target.value })}
-                                >
-                                    <option> Select Category</option>
-                                    {categories.map((c, i) => (
-                                        <option key={i} value={c}>{c}</option>
-                                    ))}
-                                </select>
+                                <div>
+                                    <select
+                                        {...formik.getFieldProps('category')}
+                                        className={`w-full border rounded-lg p-2 text-sm focus:ring-2 outline-none bg-white
+                                        ${formik.touched.category && formik.errors.category ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'}`}
+                                    >
+                                        <option value="">Select Category</option>
+                                        {categories.map((c, i) => (
+                                            <option key={i} value={c}>{c}</option>
+                                        ))}
+                                    </select>
+                                    {formik.touched.category && formik.errors.category && <p className='text-red-500 text-xs mt-1'>{formik.errors.category}</p>}
+                                </div>
 
-                                <input
-                                    type="text"
-                                    placeholder="Price"
-                                    value={editing.price}
-                                    onChange={(e) => setEditing({ ...editing, price: e.target.value })}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm
-                        focus:ring-2 focus:ring-green-500 outline-none"/>
+                                <div>
+                                    <input
+                                        type="text"
+                                        placeholder="Price"
+                                        {...formik.getFieldProps('price')}
+                                        className={`w-full border rounded-lg p-2 text-sm focus:ring-2 outline-none
+                                        ${formik.touched.price && formik.errors.price ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'}`} />
+                                    {formik.touched.price && formik.errors.price && <p className='text-red-500 text-xs mt-1'>{formik.errors.price}</p>}
+                                </div>
 
-                                <select
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2
-                        focus:ring-green-500 outline-none bg-white"
-                                    value={editing.unit}
-                                    onChange={(e) => setEditing({ ...editing, unit: e.target.value })}
-                                >
-                                    <option> Select Unit</option>
-                                    {units.map((u, i) => (
-                                        <option key={i} value={u}>{u}</option>
-                                    ))}
-                                </select>
+                                <div>
+                                    <select
+                                        {...formik.getFieldProps('unit')}
+                                        className={`w-full border rounded-lg p-2 text-sm focus:ring-2 outline-none bg-white
+                                        ${formik.touched.unit && formik.errors.unit ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'}`}
+                                    >
+                                        <option value="">Select Unit</option>
+                                        {units.map((u, i) => (
+                                            <option key={i} value={u}>{u}</option>
+                                        ))}
+                                    </select>
+                                    {formik.touched.unit && formik.errors.unit && <p className='text-red-500 text-xs mt-1'>{formik.errors.unit}</p>}
+                                </div>
 
-                                <textarea
-                                    placeholder="Description"
-                                    value={editing.description || ""}
-                                    onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-green-500 outline-none min-h-[80px]"
-                                />
+                                <div>
+                                    <textarea
+                                        placeholder="Description"
+                                        {...formik.getFieldProps('description')}
+                                        className={`w-full border rounded-lg p-2 text-sm focus:ring-2 outline-none min-h-[80px]
+                                        ${formik.touched.description && formik.errors.description ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'}`}
+                                    />
+                                    {formik.touched.description && formik.errors.description && <p className='text-red-500 text-xs mt-1'>{formik.errors.description}</p>}
+                                </div>
 
-                            </div>
-
-                            <div className="flex justify-end gap-3 mt-4">
-                                <button className="px-3 py-1.5 rounded-lg bg-green-600 text-white flex items-center text-sm
-                        gap-2 hover:bg-green-700 transition-all"
-                                    onClick={handleEdit}
-                                    disabled={loading}
-                                >
-                                    {loading ? <Loader size={14} className="animate-spin" /> : "Edit Grocery"}
-                                </button>
-                                <button className="px-3 py-1.5 rounded-lg bg-red-600 text-white flex items-center text-sm
-                        gap-2 hover:bg-red-700 transition"
-                                    onClick={handleDelete}
-                                    disabled={deleteLoading}
-                                >
-                                    {deleteLoading ? <Loader size={14} className="animate-spin" /> : "Delete Grocery"}
-                                </button>
-                            </div>
+                                <div className="flex justify-end gap-3 mt-4">
+                                    <button type="submit" className="px-3 py-1.5 rounded-lg bg-green-600 text-white flex items-center text-sm
+                                gap-2 hover:bg-green-700 transition-all"
+                                        disabled={loading}
+                                    >
+                                        {loading ? <Loader size={14} className="animate-spin" /> : "Edit Grocery"}
+                                    </button>
+                                    <button type="button" className="px-3 py-1.5 rounded-lg bg-red-600 text-white flex items-center text-sm
+                                gap-2 hover:bg-red-700 transition"
+                                        onClick={handleDelete}
+                                        disabled={deleteLoading}
+                                    >
+                                        {deleteLoading ? <Loader size={14} className="animate-spin" /> : "Delete Grocery"}
+                                    </button>
+                                </div>
+                            </form>
 
                         </motion.div>
 

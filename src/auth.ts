@@ -4,6 +4,12 @@ import connectDB from "./lib/db"
 import User from "./models/user.model"
 import bcrypt from "bcryptjs"
 import Google from "next-auth/providers/google"
+import { z } from "zod"
+
+const loginSchema = z.object({
+    email: z.email("Invalid email address"),
+    password: z.string().min(1, "Password is required")
+})
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     providers: [
@@ -13,10 +19,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 password: { label: "password", type: "password" },
             },
             async authorize(credentials, request) {
+                const validation = loginSchema.safeParse(credentials)
+                if (!validation.success) {
+                    throw new Error(validation.error.issues[0].message)
+                }
 
                 await connectDB()
-                const email = credentials.email
-                const password = credentials.password as string
+                const email = validation.data.email
+                const password = validation.data.password
                 const user = await User.findOne({ email })
 
                 if (!user) {

@@ -5,6 +5,18 @@ import User from "@/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
 import { aj } from "@/lib/arcjet";
 import { fixedWindow, detectBot } from "@arcjet/next";
+import { z } from "zod";
+
+const addressSchema = z.object({
+    fullName: z.string().min(3, "Name must be at least 3 characters").max(50, "Name cannot exceed 50 characters"),
+    mobile: z.string().length(10, "Phone number must be exactly 10 digits").regex(/^\d+$/, "Phone must contain only numbers"),
+    city: z.string().min(1, "City is required"),
+    state: z.string().min(1, "State is required"),
+    pinCode: z.string().optional(),
+    fullAddress: z.string().min(5, "Full address is required"),
+    latitude: z.number(),
+    longitude: z.number()
+});
 
 const ajRule = aj
     .withRule(detectBot({ mode: "LIVE", allow: [] }))
@@ -19,10 +31,20 @@ export async function POST(req: NextRequest) {
 
         await connectDB()
 
-        const { userId, items, paymentMethod, totalAmount, address } = await req.json()
+        const body = await req.json()
+        const { userId, items, paymentMethod, totalAmount, address } = body
+
         if (!items || !userId || !paymentMethod || !totalAmount || !address) {
             return NextResponse.json(
                 { message: "please send all credentials" },
+                { status: 400 }
+            )
+        }
+
+        const addressValidation = addressSchema.safeParse(address);
+        if (!addressValidation.success) {
+            return NextResponse.json(
+                { message: addressValidation.error.issues[0].message },
                 { status: 400 }
             )
         }

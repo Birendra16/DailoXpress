@@ -3,6 +3,18 @@ import Order from "@/models/order.model";
 import User from "@/models/user.model";
 import { createHmac } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+const addressSchema = z.object({
+    fullName: z.string().min(3, "Name must be at least 3 characters").max(50, "Name cannot exceed 50 characters"),
+    mobile: z.string().length(10, "Phone number must be exactly 10 digits").regex(/^\d+$/, "Phone must contain only numbers"),
+    city: z.string().min(1, "City is required"),
+    state: z.string().min(1, "State is required"),
+    pinCode: z.string().optional(),
+    fullAddress: z.string().min(5, "Full address is required"),
+    latitude: z.number(),
+    longitude: z.number()
+});
 
 /**
  * Generates the HMAC-SHA256 signature required by eSewa.
@@ -29,13 +41,22 @@ export async function POST(req: NextRequest) {
     try {
         await connectDB();
 
-        const { userId, items, totalAmount, subTotal, deliveryFee, address } = await req.json();
+        const body = await req.json();
+        const { userId, items, totalAmount, subTotal, deliveryFee, address } = body;
 
         if (!items || !userId || !totalAmount || subTotal === undefined || !address) {
             return NextResponse.json(
-                { message: `Missing fields: ${!userId?'userId ':''} ${!items?'items ':''} ${!totalAmount?'totalAmount ':''} ${subTotal === undefined?'subTotal ':''} ${!address?'address':''}` },
+                { message: `Missing fields: ${!userId ? 'userId ' : ''} ${!items ? 'items ' : ''} ${!totalAmount ? 'totalAmount ' : ''} ${subTotal === undefined ? 'subTotal ' : ''} ${!address ? 'address' : ''}` },
                 { status: 400 }
             );
+        }
+
+        const addressValidation = addressSchema.safeParse(address);
+        if (!addressValidation.success) {
+            return NextResponse.json(
+                { message: addressValidation.error.issues[0].message },
+                { status: 400 }
+            )
         }
 
         const user = await User.findById(userId);
