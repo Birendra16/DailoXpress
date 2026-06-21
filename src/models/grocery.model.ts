@@ -7,9 +7,19 @@ export interface IGrocery {
     image: string
     category: string
     unit: string
+    description?: string
+    reviews?: any[]
+    rating?: number
+    numReviews?: number
     createdAt?: Date
     updatedAt?: Date
 }
+
+const reviewSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    rating: { type: Number, required: true },
+    comment: { type: String, required: true }
+}, { timestamps: true })
 
 const grocerySchema = new mongoose.Schema<IGrocery>({
     name: {
@@ -46,6 +56,19 @@ const grocerySchema = new mongoose.Schema<IGrocery>({
     image: {
         type: String,
         required: true
+    },
+    description: {
+        type: String,
+        required: false
+    },
+    reviews: [reviewSchema],
+    rating: {
+        type: Number,
+        default: 0
+    },
+    numReviews: {
+        type: Number,
+        default: 0
     }
 
 }, { timestamps: true })

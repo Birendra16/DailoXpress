@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
         const unit = formData.get("unit") as string
         const price = formData.get("price") as string
         const file = formData.get("image") as Blob | null
+        const description = formData.get("description") as string
 
         let imageUrl
         if (file) {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
         }
 
         const grocery = await Grocery.create({
-            name, price, category, unit, image: imageUrl
+            name, price, category, unit, description, image: imageUrl
         })
 
         return NextResponse.json(

@@ -5,6 +5,7 @@ import { AppDispatch, RootState } from '@/redux/store'
 import { Minus, Plus, ShoppingCart } from 'lucide-react'
 import { motion } from "motion/react"
 import Image from 'next/image'
+import Link from 'next/link'
 import { useDispatch, useSelector } from 'react-redux'
 
 interface IGrocery {
@@ -36,7 +37,7 @@ function GroceryItemCard({ item }: { item: IGrocery }) {
     border border-gray-100 flex flex-col'
     >
 
-      <div className='relative w-full aspect-4/3 bg-gray-50 overflow-hidden group'>
+      <Link href={`/grocery/${item._id}`} className='relative w-full aspect-4/3 bg-gray-50 overflow-hidden group block'>
         <Image
           src={item.image}
           fill
@@ -46,19 +47,21 @@ function GroceryItemCard({ item }: { item: IGrocery }) {
         />
         <div className='absolute inset-0 bg-linear-to-t from-black/10 to-transparent opacity-0
             group-hover:opacity:100 transition-all duration-300'/>
-      </div>
+      </Link>
 
       <div className='p-4 flex flex-col flex-1'>
-        <p className='text-xs text-gray-500 font-medium mb-1'>
-          {item.category}
-        </p>
-        <h3>{item.name}</h3>
-        <div className='flex items-center justify-between mt-2'>
-          <span className='text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full'>
-            {item.unit}
-          </span>
-          <span className='text-green-700 font-bold text-lg'>रु{item.price}</span>
-        </div>
+        <Link href={`/grocery/${item._id}`} className='flex-1 block'>
+          <p className='text-xs text-gray-500 font-medium mb-1'>
+            {item.category}
+          </p>
+          <h3 className='hover:text-green-700 transition-colors'>{item.name}</h3>
+          <div className='flex items-center justify-between mt-2'>
+            <span className='text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full'>
+              {item.unit}
+            </span>
+            <span className='text-green-700 font-bold text-lg'>रु{item.price}</span>
+          </div>
+        </Link>
 
         {!cartItem ?
           <motion.button className='mt-4 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700

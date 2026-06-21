@@ -85,6 +85,11 @@ function ViewGrocery() {
             formData.append("category", editing.category)
             formData.append("price", editing.price)
             formData.append("unit", editing.unit)
+            if (editing.description) {
+                formData.append("description", editing.description)
+            } else {
+                formData.append("description", "")
+            }
 
             if (backendImage) {
                 formData.append("image", backendImage)
@@ -285,6 +290,13 @@ function ViewGrocery() {
                                         <option key={i} value={u}>{u}</option>
                                     ))}
                                 </select>
+
+                                <textarea
+                                    placeholder="Description"
+                                    value={editing.description || ""}
+                                    onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-green-500 outline-none min-h-[80px]"
+                                />
 
                             </div>
 
