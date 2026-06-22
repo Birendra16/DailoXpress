@@ -9,24 +9,39 @@ const app = express()
 app.use(express.json())
 
 const server = http.createServer(app)
-const port=process.env.PORT || 8080
+const port = process.env.PORT || 8080
+const allowedOrigins = (process.env.NEXT_BASE_URL || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
 
-const io = new Server(server,{
-    cors:{
-        origin:process.env.NEXT_BASE_URL
+const io = new Server(server, {
+    cors: {
+        origin(origin, callback) {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true)
+                return
+            }
+
+            callback(new Error(`Origin ${origin} is not allowed by CORS`))
+        }
     }
 })
 
-io.on("connection",(socket)=>{
+app.get("/", (_req, res) => {
+    res.status(200).json({ success: true, service: "socketServer" })
+})
 
-    socket.on("identity", async(userId)=>{
+io.on("connection", (socket) => {
+
+    socket.on("identity", async (userId) => {
         await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/connect`,{
             userId,
             socketId:socket.id
         })
     })
 
-    socket.on("update-location", async({userId,latitude,longitude})=>{
+    socket.on("update-location", async ({userId,latitude,longitude}) => {
 
         const location={
             type:"Point",
@@ -40,24 +55,24 @@ io.on("connection",(socket)=>{
         io.emit("update-deliveryBoy-location",{userId,location})
     })
 
-    socket.on("join-room",(roomId)=>{
+    socket.on("join-room", (roomId) => {
         console.log("join room with",roomId)
         socket.join(roomId)
     })
 
-    socket.on("send-message",async(message)=>{
+    socket.on("send-message", async (message) => {
         console.log(message)
         await axios.post(`${process.env.NEXT_BASE_URL}/api/chat/save`,message)
         io.to(message.roomId).emit("send-message",message)
     })
 
-    socket.on("disconnect",()=>{
+    socket.on("disconnect", () => {
      console.log("user disconnected",socket.id)
     })
 })
 
 
-app.post("/notify",(req,res)=>{
+app.post("/notify", (req, res) => {
     const{event,data,socketId}=req.body
     if(socketId){
         io.to(socketId).emit(event,data)
@@ -70,6 +85,6 @@ app.post("/notify",(req,res)=>{
 
 
 
-server.listen(port,()=>{
+server.listen(port, () => {
     console.log("Server running on",port)
 })
