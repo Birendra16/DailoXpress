@@ -3,6 +3,7 @@ import http from "http"
 import dotenv from "dotenv"
 import { Server } from "socket.io"
 import axios from "axios"
+
 dotenv.config()
 
 const app = express()
@@ -10,10 +11,11 @@ app.use(express.json())
 
 const server = http.createServer(app)
 const port = process.env.PORT || 8080
-const allowedOrigins = (process.env.NEXT_BASE_URL || "")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean)
+
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:3000"
+];
 
 const io = new Server(server, {
     cors: {
@@ -35,7 +37,7 @@ app.get("/", (_req, res) => {
 io.on("connection", (socket) => {
 
     socket.on("identity", async (userId) => {
-        await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/connect`,{
+        await axios.post(`${process.env.CLIENT_URL}/api/socket/connect`,{
             userId,
             socketId:socket.id
         })
@@ -48,7 +50,7 @@ io.on("connection", (socket) => {
             coordinates:[longitude,latitude]
         }
 
-        await axios.post(`${process.env.NEXT_BASE_URL}/api/socket/update-location`,
+        await axios.post(`${process.env.CLIENT_URL}/api/socket/update-location`,
             {userId,location}
         )
 
@@ -68,7 +70,7 @@ io.on("connection", (socket) => {
     })
 
     socket.on("send-message", async (message) => {
-        await axios.post(`${process.env.NEXT_BASE_URL}/api/chat/save`,message)
+        await axios.post(`${process.env.CLIENT_URL}/api/chat/save`,message)
         io.to(message.roomId).emit("send-message",message)
     })
 
