@@ -13,7 +13,6 @@ import { useParams, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { useSelector } from "react-redux"
 import { AnimatePresence, motion } from "motion/react"
-import { IMessage } from "@/models/message.model"
 
 interface IOrder {
     _id?: string
@@ -55,17 +54,33 @@ interface ILocation {
     longitude: number
 }
 
+type ChatMessage = {
+    _id?: string
+    roomId: string
+    text: string
+    senderId: string
+    time: string
+}
 
-function TrackOrder({ params }: { params: { orderId: string } }) {
+type DeliveryLocationUpdate = {
+    location: {
+        coordinates?: number[]
+        latitude?: number
+        longitude?: number
+    }
+}
+
+
+function TrackOrder() {
 
     const { userData } = useSelector((state: RootState) => state.user)
-    const { orderId } = useParams()
+    const { orderId } = useParams<{ orderId: string }>()
     const [order, setOrder] = useState<IOrder>()
     const router = useRouter()
     const [newMessage, setNewMessage] = useState("")
-    const [messages, setMessages] = useState<IMessage[]>([])
+    const [messages, setMessages] = useState<ChatMessage[]>([])
     const chatBoxRef = useRef<HTMLDivElement>(null)
-    const [suggestions, setSuggestions] = useState([])
+    const [suggestions, setSuggestions] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
 
 
@@ -83,6 +98,8 @@ function TrackOrder({ params }: { params: { orderId: string } }) {
     )
 
     useEffect(() => {
+        if (!orderId) return
+
         const getOrder = async () => {
             try {
                 const result = await axios.get(`/api/user/get-order/${orderId}`)
@@ -100,27 +117,32 @@ function TrackOrder({ params }: { params: { orderId: string } }) {
             }
         }
         getOrder()
-    }, [userData?._id])
-
-
-    useEffect((): any => {
-        const socket = getSocket()
-        socket.on("update-deliveryBoy-location", (data) => {
-            setDeliveryBoyLocation({
-                latitude: data.location.coordinates?.[1] ?? data.location.latitude,
-                longitude: data.location.coordinates?.[0] ?? data.location.longitude
-            })
-        })
-
-        return () => socket.off("update-deliveryBoy-location")
-    }, [order])
+    }, [orderId, userData?._id])
 
 
     useEffect(() => {
         const socket = getSocket()
+        const handleLocationUpdate = (data: DeliveryLocationUpdate) => {
+            setDeliveryBoyLocation({
+                latitude: data.location.coordinates?.[1] ?? data.location.latitude ?? 0,
+                longitude: data.location.coordinates?.[0] ?? data.location.longitude ?? 0
+            })
+        }
+
+        socket.on("update-deliveryBoy-location", handleLocationUpdate)
+        return () => {
+            socket.off("update-deliveryBoy-location", handleLocationUpdate)
+        }
+    }, [])
+
+
+    useEffect(() => {
+        if (!orderId) return
+
+        const socket = getSocket()
         socket.emit("join-room", orderId)
 
-        const handleMessage = (message: any) => {
+        const handleMessage = (message: ChatMessage) => {
             if (message.roomId === orderId) {
                 setMessages((prev) => [...(prev || []), message])
             }
@@ -128,15 +150,18 @@ function TrackOrder({ params }: { params: { orderId: string } }) {
 
         socket.on("send-message", handleMessage)
         return () => {
+            socket.emit("leave-room", orderId)
             socket.off("send-message", handleMessage)
         }
     }, [orderId])
 
     useEffect(() => {
+        if (!orderId) return
+
         const getAllMessages = async () => {
             try {
                 const result = await axios.post("/api/chat/messages", { roomId: orderId })
-                setMessages(result.data)
+                setMessages(result.data as ChatMessage[])
             } catch (error) {
                 console.log(error)
             }
@@ -144,15 +169,18 @@ function TrackOrder({ params }: { params: { orderId: string } }) {
 
         getAllMessages()
 
-    }, [])
+    }, [orderId])
 
 
     const sendMsg = () => {
+        const text = newMessage.trim()
+        if (!orderId || !userData?._id || !text) return
+
         const socket = getSocket()
 
         const message = {
             roomId: orderId,
-            text: newMessage,
+            text,
             senderId: userData?._id,
             time: new Date().toLocaleTimeString([], {
                 hour: "2-digit",

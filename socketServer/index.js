@@ -56,12 +56,18 @@ io.on("connection", (socket) => {
     })
 
     socket.on("join-room", (roomId) => {
+        if (!roomId) return
         console.log("join room with",roomId)
         socket.join(roomId)
     })
 
+    socket.on("leave-room", (roomId) => {
+        if (!roomId) return
+        console.log("leave room with",roomId)
+        socket.leave(roomId)
+    })
+
     socket.on("send-message", async (message) => {
-        console.log(message)
         await axios.post(`${process.env.NEXT_BASE_URL}/api/chat/save`,message)
         io.to(message.roomId).emit("send-message",message)
     })

@@ -1,7 +1,6 @@
 "use client"
 
 import { getSocket } from "@/lib/socket"
-import { IMessage } from "@/models/message.model"
 import axios from "axios"
 import { Loader, Send, Sparkle } from "lucide-react"
 import { AnimatePresence } from "motion/react"
@@ -13,26 +12,35 @@ type props = {
     deliveryBoyId: string
 }
 
+type ChatMessage = {
+    _id?: string
+    roomId: string
+    text: string
+    senderId: string
+    time: string
+}
+
 function DeliveryChat({ orderId, deliveryBoyId }: props) {
 
     const [newMessage, setNewMessage] = useState("")
-    const [messages, setMessages] = useState<IMessage[]>([])
+    const [messages, setMessages] = useState<ChatMessage[]>([])
     const chatBoxRef = useRef<HTMLDivElement>(null)
-    const [suggestions, setSuggestions] = useState([])
+    const [suggestions, setSuggestions] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         const socket = getSocket()
         socket.emit("join-room", orderId)
 
-        const handleMessage = (message: { roomId: string; text: string; senderId: string; time: string; _id?: string }) => {
+        const handleMessage = (message: ChatMessage) => {
             if (message.roomId === orderId) {
-                setMessages((prev) => [...(prev || []), message as any])
+                setMessages((prev) => [...(prev || []), message])
             }
         }
 
         socket.on("send-message", handleMessage)
         return () => {
+            socket.emit("leave-room", orderId)
             socket.off("send-message", handleMessage)
         }
     }, [orderId])
@@ -41,7 +49,7 @@ function DeliveryChat({ orderId, deliveryBoyId }: props) {
         const getAllMessages = async () => {
             try {
                 const result = await axios.post("/api/chat/messages", { roomId: orderId })
-                setMessages(result.data)
+                setMessages(result.data as ChatMessage[])
             } catch (error) {
                 console.log(error)
             }
@@ -49,15 +57,18 @@ function DeliveryChat({ orderId, deliveryBoyId }: props) {
 
         getAllMessages()
 
-    }, [])
+    }, [orderId])
 
 
     const sendMsg = () => {
+        const text = newMessage.trim()
+        if (!text) return
+
         const socket = getSocket()
 
         const message = {
             roomId: orderId,
-            text: newMessage,
+            text,
             senderId: deliveryBoyId,
             time: new Date().toLocaleTimeString([], {
                 hour: "2-digit",
@@ -112,7 +123,7 @@ function DeliveryChat({ orderId, deliveryBoyId }: props) {
             </div>
 
             <div className="flex gap-2 flex-wrap mb-3">
-                {suggestions.map((s, i) => (
+                {suggestions.map((s) => (
                     <motion.div
                         key={s}
                         whileTap={{ scale: 0.92 }}
